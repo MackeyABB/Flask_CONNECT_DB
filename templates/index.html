@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width= encv, initial-scale=1.0">
+    <title>CONNECT DB Online View</title>
+</head>
+<body>
+    <!--输出flash调试信息-->
+    <p>
+        {% for message in get_flashed_messages() %}
+            <h3 style="font-family:verdana;color:red">{{ message }}</h3>
+        {% endfor %}
+    </p>
+    <p>
+        <a href="{{ url_for('DBSelect') }}">返回选择数据库</a>
+    </p>
+    <!--表单：接收检索条件-->
+    <form method="post">
+        <fieldset>
+            <legend>Please Select the Part Type</legend>
+            <P>
+                <label>Part Type</label>
+                <select name="tableName">
+                    {% for Part_Type in Part_Type_List %}
+                        <option value ="{{Part_Type}}">{{Part_Type}}</option>
+                    {% endfor %}
+                </select>
+            </P>
+        </fieldset>
+
+        <fieldset>
+            <legend>Search by (注意:1.不要使用通配符；2:同时仅一个条件有效</legend>
+            <p><Label>Part No:<input name=PartNo></Label></p>
+            <p><Label>SAP No:<input name=SAPNo></Label></p>
+            <p><Label>Part Value:<input name=PartValue></Label></p>
+            <p><label>Max Display Line:<input name=MaxLine value=10></label></p>
+            <p><input type="submit" value="Search"></p>
+        </fieldset>
+
+    </form>
+
+    <!--显示检索结果-->
+    <fieldset>
+        <legend>Search Result:</legend>
+        <p><h3>Search Result Total Items: {{ sql_result_len }}</h3></p>
+        <p><h3>Dispaly Items: {{ MaxLine }}</h3></p>
+        <table border="2">
+            <!--表头-->
+            <tr>
+                {% for columnName in columnNameList %}
+                    <th>{{ columnName }}</th>
+                {% endfor %}
+            </tr>
+            <!--内容-->
+            {% for row in sql_result %}
+                {# 设置显示最大行数 #}
+                {% if  sql_result.index(row) < MaxLine %}
+                    {# 每行显示 #}
+                    <tr>
+                        {% for value in row %}
+                            <th>{{ value }}</th>
+                        {% endfor %}
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        </table>
+
+    </fieldset>
+
+
+
+</body>
+</html>
