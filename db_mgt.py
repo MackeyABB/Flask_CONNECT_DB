@@ -1,3 +1,14 @@
+'''
+todo:
+1. 实现Part Type选择'---All----'时,数据库fetch读取的语句和功能
+当前如果选择此项，则会报错
+可以使用UNION ALL
+-> CONNECT DB已经实现
+next:
+-> Access DB正在测试中，VPN网络太慢，需要等待回公司后再处理
+-> UNION ALL的排序混乱，如何处理？
+'''
+
 
 import pypyodbc
 
@@ -30,7 +41,6 @@ PartTypeList_CONNECT = [
 ('SOFTWARE'), 
 ('SWITCHES'), 
 ('TITLEBLOCK'), 
-('TMPPRTS'), 
 ('TRANSFORMERS'), 
 ('TRANSISTORS'), 
 ('VARISTORS'),
@@ -121,65 +131,158 @@ class Database:
 
     def fetch(self, tableName, dbindex, PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby):
         
-        # fetch data
-        # 01-CONNECT Online(ODBC)
-        if dbindex == 0:
-            # 无条件检索
-            if (PartNo_Searchby == '') and (SAPNo_Searchby == '') and (PartValue_Searchby == ''):
-                # 注意：SQL语句，最后不要添加;结束符号
-                sql_fetch = "SELECT * FROM {}".format(tableName)
-                # sql_fetch =  "SELECT * FROM RESISTORS where PARTNUMBER = 'RES_1868'"
-            else:
-                print(PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby)
-                # 仅一个条件有效
-                sql_fetch = "SELECT * FROM {} ".format(tableName)
-                # SQL语句最后不添加;也不会出错的哦
-                # SAP MAXDB检索区分大小写的COLLATE Latin1_General_CS_AS
-                if PartNo_Searchby != '':
-                    sql_append = "WHERE LOWER(PartNumber) LIKE LOWER(\'%{}%\')".format(PartNo_Searchby)
-                elif SAPNo_Searchby != '':
-                    sql_append = "WHERE LOWER(SAP_Number) LIKE LOWER(\'%{}%\')".format(SAPNo_Searchby)
-                elif PartValue_Searchby != '':
-                    sql_append = "WHERE LOWER(Value_1) LIKE LOWER(\'%{}%\')".format(PartValue_Searchby)
-                sql_fetch = sql_fetch + sql_append
+        # if not search all
+        if tableName != '---All----':
+            # fetch data
+            # 01-CONNECT Online(ODBC)
+            if dbindex == 0:
+                # 无条件检索
+                if (PartNo_Searchby == '') and (SAPNo_Searchby == '') and (PartValue_Searchby == ''):
+                    # 注意：SQL语句，最后不要添加;结束符号
+                    sql_fetch = "SELECT * FROM {}".format(tableName)
+                    # sql_fetch =  "SELECT * FROM RESISTORS where PARTNUMBER = 'RES_1868'"
+                else:
+                    print(PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby)
+                    # 仅一个条件有效
+                    sql_fetch = "SELECT * FROM {} ".format(tableName)
+                    # SQL语句最后不添加;也不会出错的哦
+                    # SAP MAXDB检索区分大小写的COLLATE Latin1_General_CS_AS
+                    if PartNo_Searchby != '':
+                        sql_append = "WHERE LOWER(PartNumber) LIKE LOWER(\'%{}%\')".format(PartNo_Searchby)
+                    elif SAPNo_Searchby != '':
+                        sql_append = "WHERE LOWER(SAP_Number) LIKE LOWER(\'%{}%\')".format(SAPNo_Searchby)
+                    elif PartValue_Searchby != '':
+                        sql_append = "WHERE LOWER(Value_1) LIKE LOWER(\'%{}%\')".format(PartValue_Searchby)
+                    sql_fetch = sql_fetch + sql_append
+                    print(sql_fetch)
+
+                self.cursor.execute(sql_fetch)
+                # columns = [column[0] for column in cursor.description]
+                columnNameList = [column[0] for column in self.cursor.description]
+                sql_result = self.cursor.fetchall()
+                # print(sql_result)
+                return sql_result, columnNameList
+            # 02-Access Online(ODBC) and 03-P Disk Access
+            elif dbindex == 1 or dbindex == 2:
+                # 无条件检索
+                if (PartNo_Searchby == '') and (SAPNo_Searchby == '') and (PartValue_Searchby == ''):
+                    sql_fetch = "SELECT * FROM [{}];".format(tableName)
+                # 条件检索
+                else:
+                    print(PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby)
+                    # 仅一个条件有效
+                    sql_fetch = "SELECT * FROM [{}] ".format(tableName)
+                    # SQL语句最后不添加;也不会出错的哦
+                    if PartNo_Searchby != '':
+                        sql_append = "WHERE PartNumber LIKE \'%{}%\'".format(PartNo_Searchby)
+                    elif SAPNo_Searchby != '':
+                        sql_append = "WHERE SAP_Number LIKE \'%{}%\'".format(SAPNo_Searchby)
+                    elif PartValue_Searchby != '':
+                        sql_append = "WHERE Value LIKE \'%{}%\'".format(PartValue_Searchby)
+                    sql_fetch = sql_fetch + sql_append
+                    print(sql_fetch)
+
+                self.cursor.execute(sql_fetch)
+                # columns = [column[0] for column in cursor.description]
+                columnNameList = [column[0] for column in self.cursor.description]
+                sql_result = self.cursor.fetchall()
+                # print(sql_result)
+                return sql_result, columnNameList
+            # 03-P Disk Access
+            # elif dbindex == 2:
+            #     pass
+        # serach all table
+        else:
+            # fetch data
+            # select_fields = 'PartNumber,value,SAP_Number,SAP_Description'
+            
+            sql_fetch = ''
+            # 01-CONNECT Online(ODBC)
+            if dbindex == 0:
+                select_fields = 'PartNumber,value_1,SAP_Number,SAP_Description'   #Different DB with different column name
+                # 无条件检索
+                if (PartNo_Searchby == '') and (SAPNo_Searchby == '') and (PartValue_Searchby == ''):
+                    # 注意：SQL语句，最后不要添加;结束符号
+                    for index, tableName in enumerate(PartTypeList_CONNECT[:-1]):
+                        if index == 0:
+                            sql_fetch = "SELECT {} FROM {}".format(select_fields, tableName)
+                        else:
+                            sql_fetch = "SELECT {} FROM {} UNION ALL ({})".format(select_fields, tableName,sql_fetch)
+                    # print(sql_fetch)
+                # 条件检索
+                else:
+                    print(PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby)
+                    # SAP MAXDB检索区分大小写的COLLATE Latin1_General_CS_AS
+                    if PartNo_Searchby != '':
+                        sql_append = "WHERE LOWER(PartNumber) LIKE LOWER(\'%{}%\')".format(PartNo_Searchby)
+                    elif SAPNo_Searchby != '':
+                        sql_append = "WHERE LOWER(SAP_Number) LIKE LOWER(\'%{}%\')".format(SAPNo_Searchby)
+                    elif PartValue_Searchby != '':
+                        sql_append = "WHERE LOWER(Value_1) LIKE LOWER(\'%{}%\')".format(PartValue_Searchby)
+                    for index, tableName in enumerate(PartTypeList_CONNECT[:-1]):
+                        # 每个table的SQL语句
+                        sql_each = "SELECT {} FROM {} ".format(select_fields, tableName)
+                        # SQL语句最后不添加;也不会出错的哦                        
+                        sql_each = sql_each + sql_append
+                        
+                        # 以下进行组合
+                        if index == 0:
+                            sql_fetch = sql_each
+                        else:                            
+                            sql_fetch = "{} UNION ALL ({})".format(sql_each,sql_fetch)
+                            
                 print(sql_fetch)
 
-            self.cursor.execute(sql_fetch)
-            # columns = [column[0] for column in cursor.description]
-            columnNameList = [column[0] for column in self.cursor.description]
-            sql_result = self.cursor.fetchall()
-            # print(sql_result)
-            return sql_result, columnNameList
-        # 02-Access Online(ODBC) and 03-P Disk Access
-        elif dbindex == 1 or dbindex == 2:
-            # 无条件检索
-            if (PartNo_Searchby == '') and (SAPNo_Searchby == '') and (PartValue_Searchby == ''):
-                sql_fetch = "SELECT * FROM [{}];".format(tableName)
-            # 条件检索
-            else:
-                print(PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby)
-                # 仅一个条件有效
-                sql_fetch = "SELECT * FROM [{}] ".format(tableName)
-                # SQL语句最后不添加;也不会出错的哦
-                if PartNo_Searchby != '':
-                    sql_append = "WHERE PartNumber LIKE \'%{}%\'".format(PartNo_Searchby)
-                elif SAPNo_Searchby != '':
-                    sql_append = "WHERE SAP_Number LIKE \'%{}%\'".format(SAPNo_Searchby)
-                elif PartValue_Searchby != '':
-                    sql_append = "WHERE Value LIKE \'%{}%\'".format(PartValue_Searchby)
-                sql_fetch = sql_fetch + sql_append
+                self.cursor.execute(sql_fetch)
+                # columns = [column[0] for column in cursor.description]
+                columnNameList = [column[0] for column in self.cursor.description]
+                sql_result = self.cursor.fetchall()
+                # print(sql_result)
+                return sql_result, columnNameList
+                        # 02-Access Online(ODBC) and 03-P Disk Access
+            # 02-Access Online(ODBC) and 03-P Disk Access
+            elif dbindex == 1 or dbindex == 2: 
+                select_fields = 'PartNumber,value,SAP_Number,SAP_Description'   #Different DB with different column name
+                # 无条件检索
+                if (PartNo_Searchby == '') and (SAPNo_Searchby == '') and (PartValue_Searchby == ''):
+                    # 注意：SQL语句，最后不要添加;结束符号
+                    for index, tableName in enumerate(PartTypeList_Access[:-1]):
+                        if index == 0:
+                            sql_fetch = "SELECT {} FROM [{}]".format(select_fields, tableName)
+                        else:
+                            sql_fetch = "SELECT {} FROM [{}] UNION ALL ({})".format(select_fields, tableName,sql_fetch)
+                    # print(sql_fetch)
+                # 条件检索
+                else:
+                    print(PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby)
+                    # SAP MAXDB检索区分大小写的COLLATE Latin1_General_CS_AS
+                    if PartNo_Searchby != '':
+                        sql_append = "WHERE PartNumber LIKE \'%{}%\'".format(PartNo_Searchby)
+                    elif SAPNo_Searchby != '':
+                        sql_append = "WHERE SAP_Number LIKE \'%{}%\'".format(SAPNo_Searchby)
+                    elif PartValue_Searchby != '':
+                        sql_append = "WHERE Value LIKE \'%{}%\'".format(PartValue_Searchby)
+                    for index, tableName in enumerate(PartTypeList_Access[:-1]):
+                        # 每个table的SQL语句
+                        sql_each = "SELECT {} FROM [{}] ".format(select_fields, tableName)
+                        # SQL语句最后不添加;也不会出错的哦                        
+                        sql_each = sql_each + sql_append
+                        
+                        # 以下进行组合
+                        if index == 0:
+                            sql_fetch = sql_each
+                        else:                            
+                            sql_fetch = "{} UNION ALL ({})".format(sql_each,sql_fetch)
+                            
                 print(sql_fetch)
 
-            self.cursor.execute(sql_fetch)
-            # columns = [column[0] for column in cursor.description]
-            columnNameList = [column[0] for column in self.cursor.description]
-            sql_result = self.cursor.fetchall()
-            # print(sql_result)
-            return sql_result, columnNameList
-        # 03-P Disk Access
-        # elif dbindex == 2:
-        #     pass
-        
+                self.cursor.execute(sql_fetch)
+                # columns = [column[0] for column in cursor.description]
+                columnNameList = [column[0] for column in self.cursor.description]
+                sql_result = self.cursor.fetchall()
+                # print(sql_result)
+                return sql_result, columnNameList
+                        # 02-Access Online(ODBC) and 03-P Disk Access
 
 
 
