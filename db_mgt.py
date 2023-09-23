@@ -287,7 +287,7 @@ class Database:
                         # 02-Access Online(ODBC) and 03-P Disk Access
             # 02-Access Online(ODBC) and 03-P Disk Access
             elif dbindex == 1 or dbindex == 2: 
-                select_fields = 'PartNumber,value,SAP_Number,SAP_Description,status,parttype,[manufact 1],[manufact partnum 1],[datasheet 1],[manufact 2],[manufact partnum 2],[datasheet 2],[manufact 3],[manufact partnum 3],[datasheet 3],[manufact 4],[manufact partnum 4],[datasheet 4],[manufact 5],[manufact partnum 5],[datasheet 5],[manufact 6],[manufact partnum 6],[datasheet 6],[manufact 7],[manufact partnum 7],[datasheet 7],scm_symbol,pcb_footprint,pcb_footprint_cp,alt_symbols,alt_symbols_cp,mounttechn,ad_symbol,ad_footprint,ad_alt_footprint'   #Different DB with different column name
+                select_fields = 'PartNumber,value,SAP_Number,SAP_Description,status,parttype,[manufact 1],[manufact partnum 1],[datasheet 1],[manufact 2],[manufact partnum 2],[datasheet 2],[manufact 3],[manufact partnum 3],[datasheet 3],[manufact 4],[manufact partnum 4],[datasheet 4],[manufact 5],[manufact partnum 5],[datasheet 5],[manufact 6],[manufact partnum 6],[datasheet 6],[manufact 7],[manufact partnum 7],[datasheet 7],scm_symbol,pcb_footprint,pcb_footprint_cp,alt_symbols,alt_symbols_cp,mounttechn,ad_symbol,ad_footprint,ad_alt_footprint,detaildrawing'   #Different DB with different column name
                 # 无条件检索
                 if (PartNo_Searchby == '') and (SAPNo_Searchby == '') and (PartValue_Searchby == ''):
                     # 注意：SQL语句，最后不要添加;结束符号

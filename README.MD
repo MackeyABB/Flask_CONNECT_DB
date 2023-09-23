@@ -15,6 +15,10 @@ ToDo List:
    --> 下一步：修改当进行全Table搜索时，Table list仅包括有关注参数的那些Table，我们需要输出的列除上述外还需要，Symbol, Footprint信息， Ordering info信息等共有的信息。
    --> Done
 3. 搜索条件仅支持自上而下的一种，不支持多种组合 -> 暂未有计划
+4. Search All时显示drawing字段信息
+-> access db实现“detaildrawing”
+-> CIS DB未实现
+5. 增加直接访问DESTO CIS DB的选项，要求先在服务器端配置相应的DSN -> tbd.
 
 
 
