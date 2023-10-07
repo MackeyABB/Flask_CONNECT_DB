@@ -1,17 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width= encv, initial-scale=1.0">
     <title>CONNECT DB Online View</title>
+    <style>
+        table,
+        td,
+        th {
+            /* border: 1px solid black; */
+            border: 1px solid #ddd;
+            font-family: Arial, Helvetica, sans-serif;
+            padding: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: center;
+            background-color: #adacac;
+            color: black;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            /* z-index: 1; */
+        }
+
+        td {
+            text-align: left;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+
+        /* tr:nth-child(even){background-color: #f2f2f2;} */
+    </style>
 </head>
+
 <body>
     <!--输出flash调试信息-->
     <p>
         {% for message in get_flashed_messages() %}
-            <h3 style="font-family:verdana;color:red">{{ message }}</h3>
-        {% endfor %}
+    <h3 style="font-family:verdana;color:red">{{ message }}</h3>
+    {% endfor %}
     </p>
     <p>
         <a href="{{ url_for('DBSelect') }}">返回选择数据库</a>
@@ -24,7 +63,7 @@
                 <label>Part Type</label>
                 <select name="tableName">
                     {% for Part_Type in Part_Type_List %}
-                        <option value ="{{Part_Type}}">{{Part_Type}}</option>
+                    <option value="{{Part_Type}}">{{Part_Type}}</option>
                     {% endfor %}
                 </select>
             </P>
@@ -44,32 +83,37 @@
     <!--显示检索结果-->
     <fieldset>
         <legend>Search Result:</legend>
-        <p><h3>Search Result Total Items: {{ sql_result_len }}</h3></p>
-        <p><h3>Dispaly Items: {{ MaxLine }}</h3></p>
-        <table border="2">
-            <!--表头-->
+        <p>
+        <h3>Search Result Total Items: {{ sql_result_len }}</h3>
+        </p>
+        <p>
+        <h3>Dispaly Items: {{ MaxLine }}</h3>
+        </p>
+    </fieldset>
+    <table>
+        <!--表头-->
+        <thead>
             <tr>
                 {% for columnName in columnNameList %}
-                    <th>{{ columnName }}</th>
+                <th>{{ columnName }}</th>
                 {% endfor %}
             </tr>
-            <!--内容-->
+        </thead>
+        <!--内容-->
+        <tbody>
             {% for row in sql_result %}
-                {# 设置显示最大行数 #}
-                {% if  sql_result.index(row) < MaxLine %}
-                    {# 每行显示 #}
-                    <tr>
-                        {% for value in row %}
-                            <th>{{ value }}</th>
-                        {% endfor %}
-                    </tr>
+            {# 设置显示最大行数 #}
+            {% if sql_result.index(row) < MaxLine %} {# 每行显示 #} <tr>
+                {% for value in row %}
+                <td>{{ value }}</td>
+                {% endfor %}
+                </tr>
                 {% endif %}
-            {% endfor %}
-        </table>
-
-    </fieldset>
-
+                {% endfor %}
+        </tbody>
+    </table>
 
 
 </body>
+
 </html>

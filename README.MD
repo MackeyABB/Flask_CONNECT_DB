@@ -8,7 +8,9 @@
 
 
 ToDo List:
-1. 显示窗口有点难看，需要使用CCS进行润色 -> 暂未有计划
+1. 显示窗口有点难看，需要使用CCS进行润色 (Done)
+    index.html页面添加ccs代码格式化表格显示，表头可固定
+    未找到固定第一列的方法
 2. Part Type中虽然有显示"---ALL----"的选项，但是未支持一次搜索所有Table. (Done)
    --> 已实现所有Table的基本搜索功能，但只显示有限的select_fields = 'PartNumber,value_1,SAP_Number,SAP_Description'
    因为有些Table不带有其它的属性。
@@ -16,9 +18,9 @@ ToDo List:
    --> Done
 3. 搜索条件仅支持自上而下的一种，不支持多种组合 -> 暂未有计划
 4. Search All时显示drawing字段信息 (Done)  
--> access db实现“detaildrawing”
--> CIS DB实现“detaildrawing”
-5. 增加直接访问DESTO CIS DB的选项，要求先在服务器端配置相应的DSN
+    -> access db实现“detaildrawing”
+    -> CIS DB实现“detaildrawing”
+5. 增加直接访问DESTO CIS DB的选项，要求先在服务器端配置相应的DSN (Done)
    在ODBC中添加新的设置,信息如下：
    Driver:SAP MaxDB
    Name:CIS_DESTO
@@ -26,7 +28,7 @@ ToDo List:
    Server:xc-s-zl08506.xc.abb.com
    Database:limbas
    程序中添加“04-CONNECT DESTO(ODBC)”数据库选择，并实现。
-6. 将"01-CONNECT Online(ODBC)"更换为"01-CONNECT Local(ODBC)",
+6. 将"01-CONNECT Online(ODBC)"更换为"01-CONNECT Local(ODBC)" (Done)
 并切换ODBC为"CIS_Local",可以避免因服务器因使用Cadence时切换"CONNECT Partslib V2"导致程序出现问题。
    在ODBC中添加新的设置,信息如下
     Driver:SAP MaxDB
@@ -34,5 +36,6 @@ ToDo List:
     Description:CONNECT DB for CDS Local
     Server:cn-w-7295178.cn.abb.com
     Database:limbas
+
 
 
