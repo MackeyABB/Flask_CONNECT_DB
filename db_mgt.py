@@ -15,9 +15,9 @@ import pypyodbc
 
 # windows parameter
 # Database List can be used.
-DBList = ['01-CONNECT Online(ODBC)', '02-Access Online(ODBC)', '03-P Disk Access','04-CONNECT DESTO(ODBC)']
+DBList = ['01-CONNECT Local(ODBC)', '02-Access Online(ODBC)', '03-P Disk Access','04-CONNECT DESTO(ODBC)']
 
-# Part Type List for DB: '01-CONNECT Online(ODBC)'
+# Part Type List for DB: '01-CONNECT Local(ODBC)'
 PartTypeList_CONNECT = [
 ('---All----'),
 ('CAPACITORS'), 
@@ -129,7 +129,7 @@ class Database:
     
     def defaul(self,dbindex):
         # template
-        # 01-CONNECT Online(ODBC)
+        # 01-CONNECT Local(ODBC)
         if dbindex == 0:
             pass
         # 02-Access Online(ODBC)
@@ -143,9 +143,10 @@ class Database:
             pass
     
     def openDB(self, dbindex, dblist, app):
-        # 01-CONNECT Online(ODBC)
+        # 01-CONNECT Local(ODBC)
         if dbindex == 0:
-            connStr = "DSN=CONNECT Partslib V2;Uid=LIMBAS2USER;Pwd=LIMBASREAD;"
+            connStr = "DSN=CIS_Local;Uid=LIMBAS2USER;Pwd=LIMBASREAD;"
+            # connStr = "DSN=CONNECT Partslib V2;Uid=LIMBAS2USER;Pwd=LIMBASREAD;"
             print(dblist[dbindex])
         # 02-Access Online(ODBC)
         elif dbindex == 1:
@@ -185,7 +186,7 @@ class Database:
         # if not search all
         if tableName != '---All----':
             # fetch data
-            # 01-CONNECT Online(ODBC)
+            # 01-CONNECT Local(ODBC)
             if dbindex == 0 or dbindex == 3:
                 # 无条件检索
                 if (PartNo_Searchby == '') and (SAPNo_Searchby == '') and (PartValue_Searchby == ''):
@@ -248,7 +249,7 @@ class Database:
             # select_fields = 'PartNumber,value,SAP_Number,SAP_Description'
             
             sql_fetch = ''
-            # 01-CONNECT Online(ODBC)
+            # 01-CONNECT Local(ODBC)
             if dbindex == 0 or dbindex == 3:
                 select_fields = 'PartNumber,value_1,SAP_Number,SAP_Description,status,parttype,manufact_1,manufact_partnum_1,datasheet_1,manufact_2,manufact_partnum_2,datasheet_2,manufact_3,manufact_partnum_3,datasheet_3,manufact_4,manufact_partnum_4,datasheet_4,manufact_5,manufact_partnum_5,datasheet_5,manufact_6,manufact_partnum_6,datasheet_6,manufact_7,manufact_partnum_7,datasheet_7,scm_symbol,pcb_footprint,alt_symbols,mounttechn,ad_symbol,ad_footprint,ad_alt_footprint, detaildrawing'   #Different DB with different column name
                 # 无条件检索

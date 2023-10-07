@@ -26,7 +26,13 @@ ToDo List:
    Server:xc-s-zl08506.xc.abb.com
    Database:limbas
    程序中添加“04-CONNECT DESTO(ODBC)”数据库选择，并实现。
-
-
+6. 将"01-CONNECT Online(ODBC)"更换为"01-CONNECT Local(ODBC)",
+并切换ODBC为"CIS_Local",可以避免因服务器因使用Cadence时切换"CONNECT Partslib V2"导致程序出现问题。
+   在ODBC中添加新的设置,信息如下
+    Driver:SAP MaxDB
+    Name:CIS_Local
+    Description:CONNECT DB for CDS Local
+    Server:cn-w-7295178.cn.abb.com
+    Database:limbas
 
 
