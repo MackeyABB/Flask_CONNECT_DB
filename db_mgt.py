@@ -15,7 +15,7 @@ import pypyodbc
 
 # windows parameter
 # Database List can be used.
-DBList = ['01-CONNECT Online(ODBC)', '02-Access Online(ODBC)', '03-P Disk Access']
+DBList = ['01-CONNECT Online(ODBC)', '02-Access Online(ODBC)', '03-P Disk Access','04-CONNECT DESTO(ODBC)']
 
 # Part Type List for DB: '01-CONNECT Online(ODBC)'
 PartTypeList_CONNECT = [
@@ -138,6 +138,9 @@ class Database:
         # 03-P Disk Access
         elif dbindex == 2:
             pass
+        # 04-CONNECT DESTO(ODBC)
+        elif dbindex == 3:
+            pass
     
     def openDB(self, dbindex, dblist, app):
         # 01-CONNECT Online(ODBC)
@@ -151,6 +154,9 @@ class Database:
         # 03-P Disk Access
         elif dbindex == 2:
             connStr = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=P:\Cadence\CIS_DB_OL\CIS_PartLib.mdb;SystemDB=P:\Cadence\CIS_DB_OL\CIS_PartLib.mdw;Uid=cadence_port;Pwd=Cadence_CIS.3;"
+            print(dblist[dbindex])
+        elif dbindex == 3:
+            connStr = "DSN=CIS_DESTO;Uid=LIMBAS2USER;Pwd=LIMBASREAD;"
             print(dblist[dbindex])
 
         # 连接数据库
@@ -180,7 +186,7 @@ class Database:
         if tableName != '---All----':
             # fetch data
             # 01-CONNECT Online(ODBC)
-            if dbindex == 0:
+            if dbindex == 0 or dbindex == 3:
                 # 无条件检索
                 if (PartNo_Searchby == '') and (SAPNo_Searchby == '') and (PartValue_Searchby == ''):
                     # 注意：SQL语句，最后不要添加;结束符号
@@ -243,7 +249,7 @@ class Database:
             
             sql_fetch = ''
             # 01-CONNECT Online(ODBC)
-            if dbindex == 0:
+            if dbindex == 0 or dbindex == 3:
                 select_fields = 'PartNumber,value_1,SAP_Number,SAP_Description,status,parttype,manufact_1,manufact_partnum_1,datasheet_1,manufact_2,manufact_partnum_2,datasheet_2,manufact_3,manufact_partnum_3,datasheet_3,manufact_4,manufact_partnum_4,datasheet_4,manufact_5,manufact_partnum_5,datasheet_5,manufact_6,manufact_partnum_6,datasheet_6,manufact_7,manufact_partnum_7,datasheet_7,scm_symbol,pcb_footprint,alt_symbols,mounttechn,ad_symbol,ad_footprint,ad_alt_footprint, detaildrawing'   #Different DB with different column name
                 # 无条件检索
                 if (PartNo_Searchby == '') and (SAPNo_Searchby == '') and (PartValue_Searchby == ''):

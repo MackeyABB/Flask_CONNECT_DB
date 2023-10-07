@@ -18,7 +18,15 @@ ToDo List:
 4. Search All时显示drawing字段信息 (Done)  
 -> access db实现“detaildrawing”
 -> CIS DB实现“detaildrawing”
-5. 增加直接访问DESTO CIS DB的选项，要求先在服务器端配置相应的DSN -> tbd.
+5. 增加直接访问DESTO CIS DB的选项，要求先在服务器端配置相应的DSN
+   在ODBC中添加新的设置,信息如下：
+   Driver:SAP MaxDB
+   Name:CIS_DESTO
+   Description:CONNECT DB for CDS DESTO online
+   Server:xc-s-zl08506.xc.abb.com
+   Database:limbas
+   程序中添加“04-CONNECT DESTO(ODBC)”数据库选择，并实现。
+
 
 
 

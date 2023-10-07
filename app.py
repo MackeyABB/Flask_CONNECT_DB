@@ -94,7 +94,7 @@ submit之后显示检索内容
 @app.route("/search/<DBType>", methods=['GET','POST'])
 def index(DBType):
     # 根据DBType来设置Part Type 列表的内容，DBType为str，对应db_mgt.DBList的index值，从0开始
-    if DBType == '0': 
+    if DBType == '0' or DBType == '3': 
         #如果将值直接在render_template里赋值，数据第一次会传递不过去，不知原因。
         Part_Type_List=db_mgt.PartTypeList_CONNECT
     elif DBType == '1':
