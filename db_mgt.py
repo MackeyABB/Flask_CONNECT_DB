@@ -1,12 +1,6 @@
 '''
 todo:
-1. 实现Part Type选择'---All----'时,数据库fetch读取的语句和功能
-当前如果选择此项，则会报错
-可以使用UNION ALL
--> CONNECT DB已经实现
-next:
--> Access DB正在测试中，VPN网络太慢，需要等待回公司后再处理
--> UNION ALL的排序混乱，如何处理？
+
 '''
 
 
@@ -206,7 +200,9 @@ class Database:
                     elif PartValue_Searchby != '':
                         sql_append = "WHERE LOWER(Value_1) LIKE LOWER(\'%{}%\')".format(PartValue_Searchby)
                     sql_fetch = sql_fetch + sql_append
-                    print(sql_fetch)
+                # SQL结果排序
+                sql_fetch = sql_fetch + " ORDER BY PartNumber ASC" 
+                print(sql_fetch)
 
                 self.cursor.execute(sql_fetch)
                 # columns = [column[0] for column in cursor.description]
@@ -232,7 +228,9 @@ class Database:
                     elif PartValue_Searchby != '':
                         sql_append = "WHERE Value LIKE \'%{}%\'".format(PartValue_Searchby)
                     sql_fetch = sql_fetch + sql_append
-                    print(sql_fetch)
+                # SQL结果排序
+                sql_fetch = sql_fetch + " ORDER BY PartNumber ASC" 
+                print(sql_fetch)
 
                 self.cursor.execute(sql_fetch)
                 # columns = [column[0] for column in cursor.description]
@@ -260,7 +258,7 @@ class Database:
                             sql_fetch = "SELECT {} FROM {}".format(select_fields, tableName)
                         else:
                             sql_fetch = "SELECT {} FROM {} UNION ALL ({})".format(select_fields, tableName,sql_fetch)
-                    # print(sql_fetch)
+                    # print(sql_fetch)   
                 # 条件检索
                 else:
                     print(PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby)
@@ -282,7 +280,10 @@ class Database:
                             sql_fetch = sql_each
                         else:                            
                             sql_fetch = "{} UNION ALL ({})".format(sql_each,sql_fetch)
-                            
+                
+                # SQL结果排序
+                sql_fetch = sql_fetch + " ORDER BY PartNumber ASC"
+                             
                 print(sql_fetch)
 
                 self.cursor.execute(sql_fetch)
@@ -325,7 +326,8 @@ class Database:
                             sql_fetch = sql_each
                         else:                            
                             sql_fetch = "{} UNION ALL ({})".format(sql_each,sql_fetch)
-                            
+                # SQL结果排序
+                sql_fetch = sql_fetch + " ORDER BY PartNumber ASC"            
                 print(sql_fetch)
 
                 self.cursor.execute(sql_fetch)

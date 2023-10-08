@@ -36,6 +36,7 @@ ToDo List:
     Description:CONNECT DB for CDS Local
     Server:cn-w-7295178.cn.abb.com
     Database:limbas
-
+7. 对检索的结果进行排序 (Done)
+   sql_fetch = sql_fetch + " ORDER BY PartNumber ASC" 
 
 
