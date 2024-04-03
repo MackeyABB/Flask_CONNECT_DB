@@ -5,7 +5,7 @@
     通过ODBC驱动读取数据CONNECT DB，支持Cadence CIS数据库和Access数据。
     可以自行选择使用哪个数据库进行读取。
     需先选择器件类型，然后设置搜索条件进行查找。
-
+	20240129增加自动AVL生成功能，用于电子组未来所有AVL均由此生成再上传到WindChill
 
 ToDo List:
 1. 显示窗口有点难看，需要使用CCS进行润色 (Done)
