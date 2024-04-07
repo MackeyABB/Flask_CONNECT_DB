@@ -18,6 +18,7 @@ todo:
 
 '''
 
+import sys
 from flask import Flask, request, redirect
 from flask import render_template
 from flask.helpers import flash, url_for
@@ -139,8 +140,8 @@ def index(DBType):
             print("SaveExcel")
             # print(columnNameList)
             if 'columnNameList' in globals():
-                temp_dir = tempfile.gettempdir()
-                file_path = os.path.join(temp_dir,"SQL_Result.xlsx")
+                temp_dir = tempfile.gettempdir()    # not used, as in the server the temp dir is not the same as in the local
+                file_path = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', "SQL_Result.xlsx")
                 if file_path:
                     wb = openpyxl.Workbook()
                     ws = wb.active
