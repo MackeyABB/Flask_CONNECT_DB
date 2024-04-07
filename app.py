@@ -1,4 +1,26 @@
 from flask import Flask, send_file , jsonify , request, redirect
+'''
+说明：
+使用Flask访问CONNECT DB并显示
+即制作网页版的CONNECT DB显示程序
+
+阶段实现说明：
+1. 已经实现原来Tkinter程序的功能：\01_Prg\10_Py\PythonCode\L_DB
+2. 设置最大显示数量是因为如果检索结果数量过多，渲染表格太大显示有问题。数据检索的条目不作限制，仅是限制了显示的数量。
+
+todo:
+1. 整个页面的样式太难看了，需要使用合适的ccs。
+2. Production系统如何Debug？
+
+?:
+1. 网页端选择了DB Selection下拉框之后，Part Type的列表没有办法更新，这是需要js来实现的吧？
+==>需要先有一个选择数据库的页面，而后跳转到新的检索页面，并且已经确认使用哪个数据。
+==>已经实现
+
+'''
+
+import sys
+from flask import Flask, request, redirect, send_file
 from flask import render_template
 from flask.helpers import flash, url_for
 import pandas as pd  
@@ -138,8 +160,8 @@ def index(DBType):
             print("SaveExcel")
             # print(columnNameList)
             if 'columnNameList' in globals():
-                temp_dir = tempfile.gettempdir()
-                file_path = os.path.join(temp_dir,"SQL_Result.xlsx")
+                temp_dir = tempfile.gettempdir()    # not used, as in the server the temp dir is not the same as in the local
+                file_path = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', "SQL_Result.xlsx")
                 if file_path:
                     wb = openpyxl.Workbook()
                     ws = wb.active
@@ -148,9 +170,13 @@ def index(DBType):
                         ws.append(row)
                     wb.save(file_path)
                     flash("Excel保存成功！{}".format(file_path))
-                # 打开Excel
-                os.system('start excel.exe {}'.format(file_path))
-                return render_template('index.html', Part_Type_List=Part_Type_List, MaxLine=MaxLine, sql_result=sql_result, columnNameList=columnNameList, sql_result_len=sql_result_len)
+                    # 打开Excel, 文件会保存在服务器中，客户端是无法直接打开这个文件的，此方法行不通的。
+                    # print(file_path)                    
+                    # os.system('start excel.exe {}'.format('"' + file_path + '"'))
+                # 可以使用send_file来发送文件给客户端
+                flash("Excel保存成功！")
+                return send_file(file_path, as_attachment=True)
+                # return render_template('index.html', Part_Type_List=Part_Type_List, MaxLine=MaxLine, sql_result=sql_result, columnNameList=columnNameList, sql_result_len=sql_result_len)
             else:
                 flash("没有数据，无法保存Excel！")
                 return render_template('index.html', Part_Type_List=Part_Type_List)
