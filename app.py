@@ -19,7 +19,7 @@ todo:
 '''
 
 import sys
-from flask import Flask, request, redirect
+from flask import Flask, request, redirect, send_file
 from flask import render_template
 from flask.helpers import flash, url_for
 import db_mgt
@@ -150,9 +150,13 @@ def index(DBType):
                         ws.append(row)
                     wb.save(file_path)
                     flash("Excel保存成功！{}".format(file_path))
-                # 打开Excel
-                os.system('start excel.exe {}'.format(file_path))
-                return render_template('index.html', Part_Type_List=Part_Type_List, MaxLine=MaxLine, sql_result=sql_result, columnNameList=columnNameList, sql_result_len=sql_result_len)
+                    # 打开Excel, 文件会保存在服务器中，客户端是无法直接打开这个文件的，此方法行不通的。
+                    # print(file_path)                    
+                    # os.system('start excel.exe {}'.format('"' + file_path + '"'))
+                # 可以使用send_file来发送文件给客户端
+                flash("Excel保存成功！")
+                return send_file(file_path, as_attachment=True)
+                # return render_template('index.html', Part_Type_List=Part_Type_List, MaxLine=MaxLine, sql_result=sql_result, columnNameList=columnNameList, sql_result_len=sql_result_len)
             else:
                 flash("没有数据，无法保存Excel！")
                 return render_template('index.html', Part_Type_List=Part_Type_List)
