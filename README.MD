@@ -8,7 +8,7 @@
 
 Log:  
 1. 20240407: 添加检索Manufacturer Part Num的功能并实现。
-
+2. 20240407: 添加导出检索结果到Excel文件的功能。
 
 ToDo List:
 1. 显示窗口有点难看，需要使用CCS进行润色 (Done)

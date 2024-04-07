@@ -23,6 +23,9 @@ from flask import render_template
 from flask.helpers import flash, url_for
 import db_mgt
 import logging
+import openpyxl
+import tempfile
+import os
 
 # production logging
 # from logging.config import dictConfig
@@ -112,18 +115,48 @@ def index(DBType):
     
     # 提交表单查询时处理
     if request.method == "POST":
-        # 获取检索条件
-        PartNo_Searchby = request.form.get("PartNo")
-        SAPNo_Searchby = request.form.get("SAPNo")
-        PartValue_Searchby = request.form.get("PartValue")
-        MfcPartNum_Searchby = request.form.get("MfcPartNum")
-        MaxLine = int(request.form.get("MaxLine"))
-        tableName  = request.form.get("tableName")
-        dbindex = int(DBType)
-        sql_result, columnNameList = db.fetch(tableName, dbindex, PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby)
-        sql_result_len = len(sql_result)
-        return render_template('index.html', Part_Type_List=Part_Type_List, MaxLine=MaxLine, sql_result=sql_result, columnNameList=columnNameList, sql_result_len=sql_result_len)
-        # return db_mgt.DBList[0]
+        # 判断按键
+        print("press the button:" + request.form['btn'])
+        if request.form['btn'] == 'Search':
+            # 获取检索条件
+            global sql_result
+            global columnNameList
+            global MaxLine
+            global sql_result_len
+            PartNo_Searchby = request.form.get("PartNo")
+            SAPNo_Searchby = request.form.get("SAPNo")
+            PartValue_Searchby = request.form.get("PartValue")
+            MfcPartNum_Searchby = request.form.get("MfcPartNum")
+            MaxLine = int(request.form.get("MaxLine"))
+            tableName  = request.form.get("tableName")
+            dbindex = int(DBType)
+            sql_result, columnNameList = db.fetch(tableName, dbindex, PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby)
+            sql_result_len = len(sql_result)
+            return render_template('index.html', Part_Type_List=Part_Type_List, MaxLine=MaxLine, sql_result=sql_result, columnNameList=columnNameList, sql_result_len=sql_result_len)
+            # return db_mgt.DBList[0]
+        elif request.form['btn'] == 'SaveExcel':
+            # 保存Excel
+            print("SaveExcel")
+            # print(columnNameList)
+            if 'columnNameList' in globals():
+                temp_dir = tempfile.gettempdir()
+                file_path = os.path.join(temp_dir,"SQL_Result.xlsx")
+                if file_path:
+                    wb = openpyxl.Workbook()
+                    ws = wb.active
+                    ws.append(columnNameList)
+                    for row in sql_result:
+                        ws.append(row)
+                    wb.save(file_path)
+                    flash("Excel保存成功！{}".format(file_path))
+                # 打开Excel
+                os.system('start excel.exe {}'.format(file_path))
+                return render_template('index.html', Part_Type_List=Part_Type_List, MaxLine=MaxLine, sql_result=sql_result, columnNameList=columnNameList, sql_result_len=sql_result_len)
+            else:
+                flash("没有数据，无法保存Excel！")
+                return render_template('index.html', Part_Type_List=Part_Type_List)
+        else:
+            return render_template('index.html', Part_Type_List=Part_Type_List)
     else:
         return render_template('index.html', Part_Type_List=Part_Type_List)
 
