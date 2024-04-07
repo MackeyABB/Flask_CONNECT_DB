@@ -116,10 +116,11 @@ def index(DBType):
         PartNo_Searchby = request.form.get("PartNo")
         SAPNo_Searchby = request.form.get("SAPNo")
         PartValue_Searchby = request.form.get("PartValue")
+        MfcPartNum_Searchby = request.form.get("MfcPartNum")
         MaxLine = int(request.form.get("MaxLine"))
         tableName  = request.form.get("tableName")
         dbindex = int(DBType)
-        sql_result, columnNameList = db.fetch(tableName, dbindex, PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby)
+        sql_result, columnNameList = db.fetch(tableName, dbindex, PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby)
         sql_result_len = len(sql_result)
         return render_template('index.html', Part_Type_List=Part_Type_List, MaxLine=MaxLine, sql_result=sql_result, columnNameList=columnNameList, sql_result_len=sql_result_len)
         # return db_mgt.DBList[0]
