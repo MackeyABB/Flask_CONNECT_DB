@@ -7,6 +7,10 @@
     需先选择器件类型，然后设置搜索条件进行查找。
 	20240129增加自动AVL生成功能，用于电子组未来所有AVL均由此生成再上传到WindChill
 
+Log:  
+1. 20240407: 添加检索Manufacturer Part Num的功能并实现。
+
+
 ToDo List:
 1. 显示窗口有点难看，需要使用CCS进行润色 (Done)
     index.html页面添加ccs代码格式化表格显示，表头可固定
