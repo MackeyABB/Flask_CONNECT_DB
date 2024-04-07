@@ -10,6 +10,11 @@ Log:
 1. 20240407: 添加检索Manufacturer Part Num的功能并实现。
 2. 20240407: 添加导出检索结果到Excel文件的功能。
 
+git branch:
+    master: major branch, not the latest on
+    dev: developing branch, new feature develop here. This branch will be merged back to "master".
+    Dev_AVL_Cyrus: Cyrus add AVL Export function web page in the server. first version of this branch is a copy from the server. After then, "dev" branch update will be merged to this branch before release to the server. This Branch will not be merge back to "master".
+
 ToDo List:
 1. 显示窗口有点难看，需要使用CCS进行润色 (Done)
     index.html页面添加ccs代码格式化表格显示，表头可固定
