@@ -19,9 +19,55 @@ todo:
 '''
 
 import sys
+import os
 from flask import Flask, request, redirect, send_file
 from flask import render_template
 from flask.helpers import flash, url_for
+
+# 强制重定向stderr到文件（用于IIS环境）
+def setup_logging():
+    try:
+        log_dir = "C:\\Temp"
+        stdout_file = os.path.join(log_dir, "Flask_CONNECT_DB_stdout.log")
+        stderr_file = os.path.join(log_dir, "Flask_CONNECT_DB_stderr.log")
+        
+        # 创建日志目录
+        os.makedirs(log_dir, exist_ok=True)
+        
+        # 使用unbuffered模式，确保立即写入
+        sys.stdout = open(stdout_file, 'a', encoding='utf-8', buffering=1)
+        sys.stderr = open(stderr_file, 'a', encoding='utf-8', buffering=1)
+        
+        # 导入datetime
+        from datetime import datetime
+        
+        # 写入启动标记（包含时间）
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print("=" * 60)
+        print(f"[{current_time}] Flask应用启动: {os.getenv('REQUEST_METHOD', 'UNKNOWN')}")
+        print(f"[{current_time}] 运行环境: {'IIS' if not os.getenv('FLASK_DEBUG') else 'Development'}")
+        print(f"[{current_time}] 当前工作目录: {os.getcwd()}")
+        print(f"[{current_time}] Python版本: {sys.version}")
+        
+        sys.stderr.write(f"[{current_time}] stderr重定向成功，工作目录: {os.getcwd()}\n")
+        sys.stderr.write(f"[{current_time}] stdout日志文件: {stdout_file}\n")
+        sys.stderr.write(f"[{current_time}] stderr日志文件: {stderr_file}\n")
+        sys.stderr.flush()
+        sys.stdout.flush()
+        
+        return True
+    except Exception as e:
+        # 如果重定向失败，写入Windows事件日志
+        try:
+            import subprocess
+            from datetime import datetime
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            subprocess.run(['eventcreate', '/T', 'ERROR', '/ID', '1001', '/D', f'[{current_time}] Flask日志重定向失败: {str(e)}'], shell=True)
+        except:
+            pass
+        return False
+
+
 import db_mgt
 import logging
 import openpyxl
@@ -56,6 +102,10 @@ import os
 
 
 app = Flask(__name__)
+
+
+
+
 
 # 对于IIS生产系统，这段要放在这里，不能放在main里
 # create DB instance
@@ -165,11 +215,25 @@ def index(DBType):
     else:
         return render_template('index.html', Part_Type_List=Part_Type_List)
 
+def DebugPrintTest():
+    # 测试日志输出（增加时间戳）
+    from datetime import datetime
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{current_time}] Flask应用启动 - 这应该出现在stdout日志中")
+    sys.stderr.write(f"[{current_time}] 这是一条stderr测试消息\n")
+
+    # 故意产生一个错误来测试stderr捕获
+    try:
+        1/0
+    except Exception as e:
+        error_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[{error_time}] 捕获异常: {e}")
+        sys.stderr.write(f"[{error_time}] stderr中的异常信息: {e}\n")
 
 # WSGI应用入口
 wsgi_app = app.wsgi_app
 
 if __name__ == '__main__':
-
-    
+    setup_logging()
+    DebugPrintTest()
     app.run(host="0.0.0.0", debug = True)
