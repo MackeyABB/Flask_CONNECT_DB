@@ -5,10 +5,27 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: Flask App",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/app.py",
+            "cwd": "${workspaceFolder}/src",
+            "env": {
+                "FLASK_APP": "app.py",
+                "FLASK_ENV": "development",
+                "FLASK_DEBUG": "1"
+            },
+            "args": [],
+            "jinja": true,
+            "justMyCode": true,
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Python: Current File",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${file}",
+            "cwd": "${fileDirname}",
             "console": "integratedTerminal",
             "justMyCode": true
         }
