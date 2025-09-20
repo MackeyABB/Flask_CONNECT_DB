@@ -165,6 +165,10 @@ def index(DBType):
     else:
         return render_template('index.html', Part_Type_List=Part_Type_List)
 
+
+# WSGI应用入口
+wsgi_app = app.wsgi_app
+
 if __name__ == '__main__':
 
     
