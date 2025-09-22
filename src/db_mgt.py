@@ -146,7 +146,7 @@ class Database:
             print(dblist[dbindex])
         # 02-Access Online(ODBC)
         elif dbindex == 1:
-            connStr = "DSN=CIS_PartLib_P_64;Uid=cadence_port;Pwd=Cadence_CIS.3;"
+            connStr = "DSN=CIS_PartLib_P_64_UNC;Uid=cadence_port;Pwd=Cadence_CIS.3;"
             print(dblist[dbindex])
         # 03-P Disk Access
         elif dbindex == 2:
