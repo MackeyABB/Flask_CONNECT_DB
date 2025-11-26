@@ -46,5 +46,10 @@ ToDo List:
     Database:limbas
 7. 对检索的结果进行排序 (Done)
    sql_fetch = sql_fetch + " ORDER BY PartNumber ASC" 
-
+8. IIS WSGI部署  
+   依然存在的问题  
+   a) UNC连接到P盘源目录，但是它的权限没有对IIS的用户配置开放，依然无法访问  
+   b) log需要移植最新的easy_log过来  
+   --> 使用IIS运行存在非常多的权限问题需要解决，暂时不继续搞了
+   
 
