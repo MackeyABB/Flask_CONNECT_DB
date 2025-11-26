@@ -146,14 +146,14 @@ class Database:
             print(dblist[dbindex])
         # 02-Access Online(ODBC)
         elif dbindex == 1:
-            connStr = "DSN=CIS_PartLib_P_64;Uid=cadence_port;Pwd=Cadence_CIS.3;"
+            connStr = "DSN=CIS_PartLib_P_64_UNC;Uid=cadence_port;Pwd=Cadence_CIS.3;"
             print(dblist[dbindex])
         # 03-P Disk Access
         elif dbindex == 2:
             connStr = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=P:\Cadence\CIS_DB_OL\CIS_PartLib.mdb;SystemDB=P:\Cadence\CIS_DB_OL\CIS_PartLib.mdw;Uid=cadence_port;Pwd=Cadence_CIS.3;"
             print(dblist[dbindex])
         elif dbindex == 3:
-            connStr = "DSN=CIS_DESTO;Uid=LIMBAS2USER;Pwd=LIMBASREAD;"
+            connStr = "DSN=CONNECT Partslib V2;Uid=LIMBAS2USER;Pwd=LIMBASREAD;"
             print(dblist[dbindex])
 
         # 连接数据库
