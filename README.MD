@@ -11,9 +11,15 @@ Log:
 2. 20240407: 添加导出检索结果到Excel文件的功能。
 
 git branch:
-    master: major branch, not the latest on
-    dev: developing branch, new feature develop here. This branch will be merged back to "master".
-    Dev_AVL_Cyrus: Cyrus add AVL Export function web page in the server. first version of this branch is a copy from the server. After then, "dev" branch update will be merged to this branch before release to the server. This Branch will not be merge back to "master".
+1. master: 
+   major branch, not the latest on
+2. dev: 
+   developing branch, new feature develop here. This branch will be merged back to "master".
+3. Dev_AVL_Cyrus: Cyrus add AVL Export function web page in the server. first version of this branch is a copy from the server. After then, "dev" branch update will be merged to this branch before release to the server. This Branch will not be merge back to "master".
+4. dev_IIS:
+   IIS environment refactor branch.
+   To let the code can run in IIS + WSGI
+
 
 ToDo List:
 1. 显示窗口有点难看，需要使用CCS进行润色 (Done)
@@ -44,9 +50,9 @@ ToDo List:
     Description:CONNECT DB for CDS Local
     Server:cn-w-7295178.cn.abb.com
     Database:limbas
-7. 对检索的结果进行排序 (Done)
+1. 对检索的结果进行排序 (Done)
    sql_fetch = sql_fetch + " ORDER BY PartNumber ASC" 
-8. IIS WSGI部署  
+2. IIS WSGI部署  
    依然存在的问题  
    a) UNC连接到P盘源目录，但是它的权限没有对IIS的用户配置开放，依然无法访问  
    b) log需要移植最新的easy_log过来  
