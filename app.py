@@ -32,6 +32,7 @@ import requests
 import base64 
 import json  
 import logging
+import datetime
   
 app = Flask(__name__)  
 import openpyxl
@@ -161,7 +162,11 @@ def index(DBType):
             # print(columnNameList)
             if 'columnNameList' in globals():
                 temp_dir = tempfile.gettempdir()    # not used, as in the server the temp dir is not the same as in the local
-                file_path = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', "SQL_Result.xlsx")
+                # file_path = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', "SQL_Result.xlsx")
+                # import datetime
+                # 用唯一文件名（如加时间戳），避免冲突
+                filename = f"SQL_Result_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+                file_path = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', filename)
                 if file_path:
                     wb = openpyxl.Workbook()
                     ws = wb.active
