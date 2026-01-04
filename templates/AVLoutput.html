@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width= encv, initial-scale=1.0">
+    <title>AVL Output Checking Point</title>
+    <style>
+        table,
+        td,
+        th {
+            /* border: 1px solid black; */
+            border: 1px solid #ddd;
+            font-family: Arial, Helvetica, sans-serif;
+            padding: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: center;
+            background-color: #adacac;
+            color: black;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            /* z-index: 1; */
+        }
+
+        td {
+            text-align: left;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+
+        /* tr:nth-child(even){background-color: #f2f2f2;} */
+    </style>
+</head>
+
+<body>
+
+	本AVL号码为{{AVL}}，AVL下载链接<a href="/downloadexcel/{{AVL}}">Link</a>
+    <table>
+        <!--表头-->
+        <thead>
+            <tr>
+                <th colspan=100></th>
+
+            </tr>
+        </thead>
+        <!--内容-->
+        <tbody>
+            {% for row in sql_result %}
+				<tr>
+				 {% for word in row.split(',') %}  
+                <td>{{ word }}</td>
+				{% endfor %}
+                </tr>
+                {% endfor %}
+        </tbody>
+    </table>
+	共生成零件个数{{PartCount}}
+	<table>
+        <!--表头-->
+        <thead>
+            <tr>
+                <th colspan=100></th>
+
+            </tr>
+        </thead>
+        <!--内容-->
+        <tbody>
+            {% for row in componentlist %}
+				<tr>
+				 {% for word in row.split(',') %}  
+                <td>{{ word }}</td>
+				{% endfor %}
+                </tr>
+                {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AVL Automatic Generator</title>
+	<style>
+        table,
+        td,
+        th {
+            /* border: 1px solid black; */
+            border: 1px solid #ddd;
+            font-family: Arial, Helvetica, sans-serif;
+            padding: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: center;
+            background-color: #adacac;
+            color: black;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            /* z-index: 1; */
+        }
+
+        td {
+            text-align: left;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+
+        /* tr:nth-child(even){background-color: #f2f2f2;} */
+    </style>
+</head>
+<body>
+    <h2>This page is used to generate AVL automatic. All the AVL must be generated in this page before release in WindChill.</h2>
+    <form method="post" action="/exportavl">
+        <p>
+    <table>
+        <!--表头-->
+        <thead>
+            <tr>
+                <th colspan=2>{{ErrorMessage}}</th>
+
+            </tr>
+        </thead>
+        <!--内容-->
+        <tbody>
+				<tr>
+					<td>请输入WindChill登陆帐号</td><td><input type="Text" name="user"></td>
+				</tr><tr>
+					<td>请输入WindChill登陆密码</td><td><input type="password" name="password"></td>
+				</tr><tr>
+					<td>请输入要生成的BOM表PN号</td><td><input type="Text" name="partnumber"></td>
+                </tr>
+        </tbody>
+    </table>
+        </p>
+        点击按钮后，由于访问WindChill和CONNECT数据库的速度问题，可能将持续几分钟，点击后请勿再次点击此按钮，确认请点击<input type="submit" name="submit">
+
+    </form>
+</body>
+</html>
