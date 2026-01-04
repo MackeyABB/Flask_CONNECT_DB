@@ -11,6 +11,7 @@ import pypyodbc
 # Database List can be used.
 DBList = ['01-CONNECT Local(ODBC)', '02-Access Online(ODBC)', '03-P Disk Access','04-CONNECT DESTO(ODBC)']
 
+
 # Part Type List for DB: '01-CONNECT Local(ODBC)'
 PartTypeList_CONNECT = [
 ('---All----'),
@@ -137,7 +138,8 @@ class Database:
         # 04-CONNECT DESTO(ODBC)
         elif dbindex == 3:
             pass
-    
+
+   
     def openDB(self, dbindex, dblist, app):
         # 01-CONNECT Local(ODBC)
         if dbindex == 0:
@@ -265,7 +267,7 @@ class Database:
             sql_fetch = ''
             # 01-CONNECT Local(ODBC)
             if dbindex == 0 or dbindex == 3:
-                select_fields = 'PartNumber,value_1,SAP_Number,SAP_Description,status,parttype,manufact_1,manufact_partnum_1,datasheet_1,manufact_2,manufact_partnum_2,datasheet_2,manufact_3,manufact_partnum_3,datasheet_3,manufact_4,manufact_partnum_4,datasheet_4,manufact_5,manufact_partnum_5,datasheet_5,manufact_6,manufact_partnum_6,datasheet_6,manufact_7,manufact_partnum_7,datasheet_7,scm_symbol,pcb_footprint,alt_symbols,mounttechn,ad_symbol,ad_footprint,ad_alt_footprint, detaildrawing'   #Different DB with different column name
+                select_fields = 'PartNumber,value_1,SAP_Number,SAP_Description,status,parttype,manufact_1,manufact_partnum_1,datasheet_1,manufact_2,manufact_partnum_2,datasheet_2,manufact_3,manufact_partnum_3,datasheet_3,manufact_4,manufact_partnum_4,datasheet_4,manufact_5,manufact_partnum_5,datasheet_5,manufact_6,manufact_partnum_6,datasheet_6,manufact_7,manufact_partnum_7,datasheet_7,scm_symbol,pcb_footprint,alt_symbols,mounttechn,ad_symbol,ad_footprint,ad_alt_footprint, detaildrawing,Status,Editor,US_technology,TechDescription'   #Different DB with different column name
                 # 无条件检索
                 if (PartNo_Searchby == '') and (SAPNo_Searchby == '') and (PartValue_Searchby == '') and (MfcPartNum_Searchby == ''):
                     # 注意：SQL语句，最后不要添加;结束符号
@@ -318,7 +320,7 @@ class Database:
                         # 02-Access Online(ODBC) and 03-P Disk Access
             # 02-Access Online(ODBC) and 03-P Disk Access
             elif dbindex == 1 or dbindex == 2: 
-                select_fields = 'PartNumber,value,SAP_Number,SAP_Description,status,parttype,[manufact 1],[manufact partnum 1],[datasheet 1],[manufact 2],[manufact partnum 2],[datasheet 2],[manufact 3],[manufact partnum 3],[datasheet 3],[manufact 4],[manufact partnum 4],[datasheet 4],[manufact 5],[manufact partnum 5],[datasheet 5],[manufact 6],[manufact partnum 6],[datasheet 6],[manufact 7],[manufact partnum 7],[datasheet 7],scm_symbol,pcb_footprint,pcb_footprint_cp,alt_symbols,alt_symbols_cp,mounttechn,ad_symbol,ad_footprint,ad_alt_footprint,detaildrawing'   #Different DB with different column name
+                select_fields = 'PartNumber,value,SAP_Number,SAP_Description,status,parttype,[manufact 1],[manufact partnum 1],[datasheet 1],[manufact 2],[manufact partnum 2],[datasheet 2],[manufact 3],[manufact partnum 3],[datasheet 3],[manufact 4],[manufact partnum 4],[datasheet 4],[manufact 5],[manufact partnum 5],[datasheet 5],[manufact 6],[manufact partnum 6],[datasheet 6],[manufact 7],[manufact partnum 7],[datasheet 7],scm_symbol,pcb_footprint,pcb_footprint_cp,alt_symbols,alt_symbols_cp,mounttechn,ad_symbol,ad_footprint,ad_alt_footprint,detaildrawing,STATUS,EDITOR,US_TECHNOLOGY,TECHDESCRIPTION'   #Different DB with different column name
                 # 无条件检索
                 if (PartNo_Searchby == '') and (SAPNo_Searchby == '') and (PartValue_Searchby == '') and (MfcPartNum_Searchby == ''):
                     # 注意：SQL语句，最后不要添加;结束符号
@@ -327,7 +329,7 @@ class Database:
                             sql_fetch = "SELECT {} FROM [{}]".format(select_fields, tableName)
                         else:
                             sql_fetch = "SELECT {} FROM [{}] UNION ALL ({})".format(select_fields, tableName,sql_fetch)
-                    # print(sql_fetch)
+                    print(sql_fetch)
                 # 条件检索
                 else:
                     print(PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby)
@@ -368,6 +370,68 @@ class Database:
                 return sql_result, columnNameList
                         # 02-Access Online(ODBC) and 03-P Disk Access
 
+    def openAcc(self):
+        MDB="C:\inetpub\wwwroot\db\#PrJRcd.mdb"
+        connStr="DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ="+MDB+";PWD=ABBabbELE;"
+        try:
+            self.conn = pypyodbc.connect(connStr, timeout=20, readonly=True)
+            self.cursor = self.conn.cursor()
+            return "success"
+        except Exception as e:
+            print("Cannot Connect to DB!!\n")
+            print(e)
+            return "fail"
+
+    def readBOM(self,AVL):    
+        # get the BOM from database
+        sql_listTable = "SELECT BOM FROM DocAVL WHERE AVL='"+AVL+"' order by BOM"
+        self.cursor.execute(sql_listTable)
+        table_list = self.cursor.fetchall()
+        #print(table_list) #测试输出的值
+        return table_list
+    
+    def openMaxDB(self):
+        connStr = "DSN=CIS_DESTO;Uid=LIMBAS2USER;Pwd=LIMBASREAD;"
+
+        # 连接数据库
+        try:
+            self.conn = pypyodbc.connect(connStr, timeout=20, readonly=True)
+            self.cursor = self.conn.cursor()
+            print("Connect DB success!")
+            return True
+        except Exception as e:
+            print("Cannot Connect to DB!!\n")
+            return False
+        
+
+    def fetchMax(self, SAPNo_Searchby):
+        # serach all table
+        # fetch data
+        sql_fetch = ''
+        select_fields = 'PartNumber,SAP_Description,status,Detaildrawing,manufact_1,manufact_partnum_1,manufact_2,manufact_partnum_2,manufact_3,manufact_partnum_3,manufact_4,manufact_partnum_4,manufact_5,manufact_partnum_5,manufact_6,manufact_partnum_6,manufact_7,manufact_partnum_7'   #Different DB with different column name
+
+        # SAP MAXDB检索区分大小写的COLLATE Latin1_General_CS_AS
+        if SAPNo_Searchby != '':
+            sql_append = "WHERE LOWER(SAP_Number) LIKE LOWER('{}')".format(SAPNo_Searchby)
+        for index, tableName in enumerate(PartTypeList_CONNECT_4All_Search):
+            # 每个table的SQL语句
+            sql_each = "SELECT {} FROM {} ".format(select_fields, tableName)
+            # SQL语句最后不添加;也不会出错的哦                        
+            sql_each = sql_each + sql_append
+            
+            # 以下进行组合
+            if index == 0:
+                sql_fetch = sql_each
+            else:                            
+                sql_fetch = "{} UNION ALL ({})".format(sql_each,sql_fetch)
+        
+                     
+        #print(sql_fetch+"\r\n")
+
+        self.cursor.execute(sql_fetch)
+        sql_result = self.cursor.fetchall()
+        #print(sql_result)
+        return sql_result
 
 
 
