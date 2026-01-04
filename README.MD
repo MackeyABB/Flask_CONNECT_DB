@@ -1,25 +1,32 @@
 开发环境： 
-    Pythone + Flask
+    Python + Flask
+
+运行环境：
+   Python 3.9+
+   add-on: Flask
+   实测未能运行在IIS环境下，需要单独通过Python程序运行。
 
 程序功能： 
     通过ODBC驱动读取数据CONNECT DB，支持Cadence CIS数据库和Access数据。
     可以自行选择使用哪个数据库进行读取。
     需先选择器件类型，然后设置搜索条件进行查找。
-	20240129增加自动AVL生成功能，用于电子组未来所有AVL均由此生成再上传到WindChill
+	20240129增加自动AVL生成功能，用于电子组未来所有AVL均由此生成再上传到WindChill --> by Cyrus -> 2025之后因PLM改双重验证登录，此功能已经无法使用，需要进行更新。
 
 Log:  
 1. 20240407: 添加检索Manufacturer Part Num的功能并实现。
 2. 20240407: 添加导出检索结果到Excel文件的功能。
+3. 20260104: 将Dev_AVL_Cyrus分支合并回master，以后的功能开发基于master进行。
 
 git branch:
 1. master: 
-   major branch, not the latest on
+   major branch, 
 2. dev: 
-   developing branch, new feature develop here. This branch will be merged back to "master".
-3. Dev_AVL_Cyrus: Cyrus add AVL Export function web page in the server. first version of this branch is a copy from the server. After then, "dev" branch update will be merged to this branch before release to the server. This Branch will not be merge back to "master".
+   developing branch, new feature develop here. This branch will be mergedback to "master".
+3. Dev_AVL_Cyrus: Cyrus add AVL Export f unction web page in the server. first version of this branch is a copy from the server. After then, "dev" branch update will be merged to this branch before release to the server. This Branch had been merged back to "master" on 20260104 and will be no longer used.
 4. dev_IIS:
    IIS environment refactor branch.
    To let the code can run in IIS + WSGI
+   --> access permission problem, pending.
 
 
 ToDo List:
@@ -53,7 +60,7 @@ ToDo List:
     Database:limbas
 7. 对检索的结果进行排序 (Done)
    sql_fetch = sql_fetch + " ORDER BY PartNumber ASC" 
-8. IIS WSGI部署  
+8. IIS WSGI部署 (Pending) 
    依然存在的问题  
    a) UNC连接到P盘源目录，但是它的权限没有对IIS的用户配置开放，依然无法访问  
    b) log需要移植最新的easy_log过来  
