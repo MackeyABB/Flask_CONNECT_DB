@@ -27,7 +27,8 @@ git branch:
    IIS environment refactor branch.
    To let the code can run in IIS + WSGI
    --> access permission problem, pending.
-
+5. Refactor_PyPika
+   use PyPika lib to refactor the SQL generate method.
 
 ToDo List:
 1. 显示窗口有点难看，需要使用CCS进行润色 (Done)
@@ -58,9 +59,9 @@ ToDo List:
     Description:CONNECT DB for CDS Local
     Server:cn-w-7295178.cn.abb.com
     Database:limbas
-7. 对检索的结果进行排序 (Done)
+1. 对检索的结果进行排序 (Done)
    sql_fetch = sql_fetch + " ORDER BY PartNumber ASC" 
-8. IIS WSGI部署 (Pending) 
+2. IIS WSGI部署 (Pending) 
    依然存在的问题  
    a) UNC连接到P盘源目录，但是它的权限没有对IIS的用户配置开放，依然无法访问  
    b) log需要移植最新的easy_log过来  
