@@ -16,7 +16,18 @@ Revision History:
 # zz: Bug修复
 __version__ = "1.0.0"
 
+
+# 导入子模块
+# 直接按目录结构导入，无需sys.path
+# 方法一:
+# from third_party.PyPika_CONNECT.PyPika.PyPika_CONNECT import *
+# print("PyPika_CONNECT Version:", __version__)
+# 方法二:
+import third_party.PyPika_CONNECT.PyPika.PyPika_CONNECT as PyPika_CONNECT
+print("Imported PyPika_CONNECT Version:", PyPika_CONNECT.__version__)
+
 import pypyodbc
+
 
 
 # windows parameter
