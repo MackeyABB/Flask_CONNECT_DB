@@ -1,8 +1,20 @@
 '''
-todo:
+Introduction:
+This module provides a set of classes and functions to manage database connections and queries for different database systems. 
+It supports multiple database types, including ODBC connections for local and online databases.
+
+Revision History:
+1.0.0 - 标注版本号的第一个版本, 在进行代码重构之前的版本.
 
 '''
 
+
+# 版本号
+# xx.yy.zz
+# xx: 大版本，架构性变化
+# yy: 功能性新增
+# zz: Bug修复
+__version__ = "1.0.0"
 
 import pypyodbc
 
