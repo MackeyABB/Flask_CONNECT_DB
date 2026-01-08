@@ -24,7 +24,7 @@ __version__ = "1.0.0"
 # print("PyPika_CONNECT Version:", __version__)
 # 方法二:
 import third_party.PyPika_CONNECT.PyPika.PyPika_CONNECT as PyPika_CONNECT
-print("Imported PyPika_CONNECT Version:", PyPika_CONNECT.__version__)
+# print("Imported PyPika_CONNECT Version:", PyPika_CONNECT.__version__)
 
 import pypyodbc
 
@@ -164,6 +164,16 @@ class Database:
 
    
     def openDB(self, dbindex, dblist, app):
+        """Open a database connection.
+
+        Args:
+            dbindex (int): The index of the database to connect to.
+            dblist (list): The list of database names.  
+            app (_type_): Flask app for logging.
+
+        Returns:
+            _type_: True if the connection is successful, False otherwise.
+        """
         # 01-CONNECT Local(ODBC)
         if dbindex == 0:
             connStr = "DSN=CIS_Local;Uid=LIMBAS2USER;Pwd=LIMBASREAD;"
@@ -193,9 +203,24 @@ class Database:
             # print(e)
             return False
     
-    def listTable(self):    
+    def listTable(self, dbindex):    
+        """List all tables in the database.
+
+        Args:
+            dbindex (int): The index of the database to list tables from.
+
+        Returns:
+            list: A list of table names.
+        """
         # get the table list
-        sql_listTable = "SELECT NAME FROM MSYSOBJECTS WHERE TYPE=1 AND FLAGS=0;"
+        # 01-CONNECT Local(ODBC)
+        if dbindex == 0 or dbindex == 3:
+            # SAPMaxDB数据库获取表名的SQL语句
+            sql_listTable = "select table_name from all_tables"
+        # 02-Access Online(ODBC) and 03-P Disk Access
+        elif dbindex == 1 or dbindex == 2:
+            # Access数据库获取表名的SQL语句
+            sql_listTable = "SELECT NAME FROM MSYSOBJECTS WHERE TYPE=1 AND FLAGS=0;"
         self.cursor.execute(sql_listTable)
         table_list = self.cursor.fetchall()
         print(table_list)
@@ -456,6 +481,19 @@ class Database:
         #print(sql_result)
         return sql_result
 
+if __name__ == "__main__":
+    try:
+        # test the listTable function
+        print("Testing listTable function:")
+        db = Database()
+        for index, dbname in enumerate(DBList):
+            print("=====================================")
+            print("index:", index, "\ndbname:", dbname)
+            db.openDB(index, DBList, None)
+            db.listTable(index)
+    except Exception as e:
+        print("Error:", e)
+        pass
 
 
 
