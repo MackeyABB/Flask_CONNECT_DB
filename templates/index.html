@@ -71,12 +71,12 @@
         </fieldset>
 
         <fieldset>
-            <legend>Search by (注意:1.不要使用通配符；2:同时仅一个条件有效</legend>
+            <legend>Search by (注意:1.不要使用通配符；2:以下条件为与AND关系)</legend>
             <p><Label>Part No:<input name=PartNo></Label></p>
             <p><Label>SAP No:<input name=SAPNo></Label></p>
             <p><Label>Part Value:<input name=PartValue></Label></p>
             <p><Label>Manufacturer PartNum:<input name=MfcPartNum></Label></p>
-            <p><label>Max Display Line:<input name=MaxLine value=100></label></p>
+            <p><label>Max Display Line:<input name=MaxLine value=1000></label></p>
             <p><input type="submit" name="btn" value="Search"></p>
             <p><input type="submit" name="btn" value="SaveExcel"></p>            
         </fieldset>
@@ -91,7 +91,11 @@
         <h3>Search Result Total Items: {{ sql_result_len }}</h3>
         </p>
         <p>
-        <h3>Dispaly Items: {{ MaxLine }}</h3>
+            {% if MaxLine >= sql_result_len %}
+                <h3>Display Items: {{ sql_result_len }}</h3>
+            {% else %}
+                <h3>Display Items: {{ MaxLine }} (Results exceed max display line, please refine your search conditions!)</h3>
+            {% endif %}
         </p>
     </fieldset>
     <table>
