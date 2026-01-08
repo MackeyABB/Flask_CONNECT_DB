@@ -72,11 +72,11 @@
 
         <fieldset>
             <legend>Search by (注意:1.不要使用通配符；2:以下条件为与AND关系)</legend>
-            <p><Label>Part No:<input name=PartNo></Label></p>
-            <p><Label>SAP No:<input name=SAPNo></Label></p>
-            <p><Label>Part Value:<input name=PartValue></Label></p>
-            <p><Label>Manufacturer PartNum:<input name=MfcPartNum></Label></p>
-            <p><label>Max Display Line:<input name=MaxLine value=1000></label></p>
+            <p><Label>Part No:<input name="PartNo" value="{{ PartNo|default('') }}"></Label></p>
+            <p><Label>SAP No:<input name="SAPNo" value="{{ SAPNo|default('') }}"></Label></p>
+            <p><Label>Part Value:<input name="PartValue" value="{{ PartValue|default('') }}"></Label></p>
+            <p><Label>Manufacturer PartNum:<input name="MfcPartNum" value="{{ MfcPartNum|default('') }}"></Label></p>
+            <p><label>Max Display Line:<input name="MaxLine" value="{{ MaxLine|default(1000) }}"></label></p>
             <p><input type="submit" name="btn" value="Search"></p>
             <p><input type="submit" name="btn" value="SaveExcel"></p>            
         </fieldset>
@@ -93,10 +93,12 @@
         <h3>Search Result Total Items: {{ sql_result_len }}</h3>
         </p>
         <p>
-            {% if MaxLine >= sql_result_len %}
+            {% if MaxLine is defined and MaxLine >= sql_result_len %}
                 <h3>Display Items: {{ sql_result_len }}</h3>
-            {% else %}
+            {% elif MaxLine is defined %}
                 <h3>Display Items: {{ MaxLine }} (Results exceed max display line, please refine your search conditions!)</h3>
+            {% else %}
+                <h3>Display Items: {{ sql_result_len }}</h3>
             {% endif %}
         </p>
     </fieldset>
