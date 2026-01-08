@@ -5,7 +5,13 @@ It supports multiple database types, including ODBC connections for local and on
 
 Revision History:
 1.0.0 - 标注版本号的第一个版本, 在进行代码重构之前的版本.
-
+2.0.0 - 20260108:使用PyPika子模块进行代码重构，优化数据库连接管理。
+        相关文件: db_mgt.py, third_party/PyPika_CONNECT/PyPika/PyPika_CONNECT.py
+        更新函数: fetch()
+        功能影响: 
+        1.单PartType搜索输出列表跟All PartType时一样
+        2.All PartType搜索各个条件可以同时使用为AND关系
+            
 '''
 
 
@@ -14,7 +20,7 @@ Revision History:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__version__ = "1.0.0"
+__version__ = "2.0.0"
 
 
 # 导入子模块
@@ -226,103 +232,33 @@ class Database:
         return table_list
 
     def fetch(self, tableName, dbindex, PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby):
-        
+        final_sql = ''
+        # Determine DB_Type
+        # 01-CONNECT Local(ODBC)
+        # SAPMaxDB数据库获取表名的SQL语句
+        if dbindex == 0 or dbindex == 3:
+            DB_Type = "SAPMaxDB"
+        # 02-Access Online(ODBC) and 03-P Disk Access
+        # AccessDB数据库获取表名的SQL语句
+        elif dbindex == 1 or dbindex == 2: 
+            DB_Type = "AccessDB"
+        print("Database Type:", DB_Type)
+
+        # 仅需要单独判断是搜索某个表还是所有表
         # if not search all, search specified table
         if tableName != '---All----':
-            # fetch data
-            # 01-CONNECT Local(ODBC)
-            if dbindex == 0 or dbindex == 3:
-                # 无条件检索
-                if (PartNo_Searchby == '') and (SAPNo_Searchby == '') and (PartValue_Searchby == '') and (MfcPartNum_Searchby == ''):
-                    # 注意：SQL语句，最后不要添加;结束符号
-                    sql_fetch = "SELECT * FROM {}".format(tableName)
-                    # sql_fetch =  "SELECT * FROM RESISTORS where PARTNUMBER = 'RES_1868'"
-                else:
-                    print(PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby)
-                    # 仅一个条件有效
-                    sql_fetch = "SELECT * FROM {} ".format(tableName)
-                    # SQL语句最后不添加;也不会出错的哦
-                    # SAP MAXDB检索区分大小写的COLLATE Latin1_General_CS_AS
-                    if PartNo_Searchby != '':
-                        sql_append = "WHERE LOWER(PartNumber) LIKE LOWER(\'%{}%\')".format(PartNo_Searchby)
-                    elif SAPNo_Searchby != '':
-                        sql_append = "WHERE LOWER(SAP_Number) LIKE LOWER(\'%{}%\')".format(SAPNo_Searchby)
-                    elif PartValue_Searchby != '':
-                        sql_append = "WHERE LOWER(Value_1) LIKE LOWER(\'%{}%\')".format(PartValue_Searchby)
-                    elif MfcPartNum_Searchby != '':
-                        for index, MfcPartNum in enumerate(MftPartNumList_SAPMax):
-                            if index == 0:
-                                sql_append = "WHERE LOWER({}) LIKE LOWER(\'%{}%\')".format(MfcPartNum, MfcPartNum_Searchby)
-                            else:
-                                sql_append = "{} OR LOWER({}) LIKE LOWER(\'%{}%\')".format(sql_append, MfcPartNum, MfcPartNum_Searchby)
-
-                    sql_fetch = sql_fetch + sql_append
-                # SQL结果排序
-                sql_fetch = sql_fetch + " ORDER BY PartNumber ASC" 
-                print(sql_fetch)
-
-                self.cursor.execute(sql_fetch)
-                # columns = [column[0] for column in cursor.description]
-                columnNameList = [column[0] for column in self.cursor.description]
-                sql_result = self.cursor.fetchall()
-                # print(sql_result)
-                return sql_result, columnNameList
-            # 02-Access Online(ODBC) and 03-P Disk Access
-            elif dbindex == 1 or dbindex == 2:
-                # 无条件检索
-                if (PartNo_Searchby == '') and (SAPNo_Searchby == '') and (PartValue_Searchby == '') and (MfcPartNum_Searchby == ''):
-                    sql_fetch = "SELECT * FROM [{}];".format(tableName)
-                # 条件检索
-                else:
-                    print(PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby)
-                    # 仅一个条件有效
-                    sql_fetch = "SELECT * FROM [{}] ".format(tableName)
-                    # SQL语句最后不添加;也不会出错的哦
-                    if PartNo_Searchby != '':
-                        sql_append = "WHERE PartNumber LIKE \'%{}%\'".format(PartNo_Searchby)
-                    elif SAPNo_Searchby != '':
-                        sql_append = "WHERE SAP_Number LIKE \'%{}%\'".format(SAPNo_Searchby)
-                    elif PartValue_Searchby != '':
-                        sql_append = "WHERE Value LIKE \'%{}%\'".format(PartValue_Searchby)
-                    elif MfcPartNum_Searchby != '':
-                        for index, MfcPartNum in enumerate(MftPartNumList_Access):
-                            if index == 0:
-                                sql_append = "WHERE {} LIKE \'%{}%\'".format(MfcPartNum, MfcPartNum_Searchby)
-                            else:
-                                sql_append = "{} OR {} LIKE \'%{}%\'".format(sql_append, MfcPartNum, MfcPartNum_Searchby)
-
-                    sql_fetch = sql_fetch + sql_append
-                # SQL结果排序
-                sql_fetch = sql_fetch + " ORDER BY PartNumber ASC" 
-                print(sql_fetch)
-
-                self.cursor.execute(sql_fetch)
-                # columns = [column[0] for column in cursor.description]
-                columnNameList = [column[0] for column in self.cursor.description]
-                sql_result = self.cursor.fetchall()
-                # print(sql_result)
-                return sql_result, columnNameList
-            # 03-P Disk Access
-            # elif dbindex == 2:
-            #     pass
+            TABLES = []
+            # Determine TABLES and FIELDS based on DB_Type
+            if DB_Type == "AccessDB":
+                # AccessDB
+                TABLES.append(f"[{tableName}]")
+                FIELDS = PyPika_CONNECT.FIELDS_AccessDB
+            else:
+                # SAPMaxDB
+                TABLES.append(f"{tableName}")
+                FIELDS = PyPika_CONNECT.FIELDS_SAPMaxDB
         # serach all table
-        else:
-            # fetch data
-            # select_fields = 'PartNumber,value,SAP_Number,SAP_Description'
-            
-            # sql_fetch = ''
-            final_sql = ''
-
-            # Determine DB_Type
-            # 01-CONNECT Local(ODBC)
-            # SAPMaxDB数据库获取表名的SQL语句
-            if dbindex == 0 or dbindex == 3:
-                DB_Type = "SAPMaxDB"
-            # 02-Access Online(ODBC) and 03-P Disk Access
-            # AccessDB数据库获取表名的SQL语句
-            elif dbindex == 1 or dbindex == 2: 
-                DB_Type = "AccessDB"
-            print("Database Type:", DB_Type)
+        else:          
             # Determine TABLES and FIELDS based on DB_Type
             if DB_Type == "AccessDB":
                 # AccessDB
@@ -333,29 +269,29 @@ class Database:
                 TABLES = PyPika_CONNECT.TABLES_SAPMaxDB
                 FIELDS = PyPika_CONNECT.FIELDS_SAPMaxDB
             
-            # 生成过滤条件
-            FILTER_CONDITIONS = PyPika_CONNECT.generate_filter_conditions(
-                DB_Type=DB_Type,
-                PartNo_Searchby=PartNo_Searchby,
-                SAPNo_Searchby=SAPNo_Searchby,
-                PartValue_Searchby=PartValue_Searchby,
-                MfcPartNum_Searchby=MfcPartNum_Searchby
-            )
+        # 生成过滤条件
+        FILTER_CONDITIONS = PyPika_CONNECT.generate_filter_conditions(
+            DB_Type=DB_Type,
+            PartNo_Searchby=PartNo_Searchby,
+            SAPNo_Searchby=SAPNo_Searchby,
+            PartValue_Searchby=PartValue_Searchby,
+            MfcPartNum_Searchby=MfcPartNum_Searchby
+        )
 
-            # 生成最终SQL
-            final_sql = PyPika_CONNECT.build_final_sql(
-                tables=TABLES,
-                fields=FIELDS,
-                filter_conditions=FILTER_CONDITIONS,
-                order_by_field="PartNumber",
-                order="ASC"
-            )
-            print("Generated SQL:\n", final_sql)
-            self.cursor.execute(final_sql)
-            columnNameList = [column[0] for column in self.cursor.description]
-            sql_result = self.cursor.fetchall()
-            # print(sql_result)
-            return sql_result, columnNameList
+        # 生成最终SQL
+        final_sql = PyPika_CONNECT.build_final_sql(
+            tables=TABLES,
+            fields=FIELDS,
+            filter_conditions=FILTER_CONDITIONS,
+            order_by_field="PartNumber",
+            order="ASC"
+        )
+        print("Generated SQL:\n", final_sql)
+        self.cursor.execute(final_sql)
+        columnNameList = [column[0] for column in self.cursor.description]
+        sql_result = self.cursor.fetchall()
+        # print(sql_result)
+        return sql_result, columnNameList
         
     def openAcc(self):
         MDB="C:\inetpub\wwwroot\db\#PrJRcd.mdb"
