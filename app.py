@@ -151,10 +151,11 @@ def index(DBType):
             MfcPartNum_Searchby = request.form.get("MfcPartNum")
             MaxLine = int(request.form.get("MaxLine"))
             tableName  = request.form.get("tableName")
+            Search_Info = f"PartNo: {PartNo_Searchby}, SAPNo: {SAPNo_Searchby}, PartValue: {PartValue_Searchby}, MfcPartNum: {MfcPartNum_Searchby}, MaxLine: {MaxLine}, TableName: {tableName}"
             dbindex = int(DBType)
             sql_result, columnNameList = db.fetch(tableName, dbindex, PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby)
             sql_result_len = len(sql_result)
-            return render_template('index.html', Part_Type_List=Part_Type_List, MaxLine=MaxLine, sql_result=sql_result, columnNameList=columnNameList, sql_result_len=sql_result_len)
+            return render_template('index.html', Part_Type_List=Part_Type_List, MaxLine=MaxLine, sql_result=sql_result, columnNameList=columnNameList, sql_result_len=sql_result_len, Search_Info=Search_Info)
             # return db_mgt.DBList[0]
         elif request.form['btn'] == 'SaveExcel':
             # 保存Excel
