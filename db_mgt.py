@@ -11,7 +11,13 @@ Revision History:
         功能影响: 
         1.单PartType搜索输出列表跟All PartType时一样
         2.All PartType搜索各个条件可以同时使用为AND关系
-            
+2.1.0 - 20240610: 新增过滤条件“Description”"techdescription" "editor"到fetch函数中。
+        注意:
+            SAPMaxDB中Editor字段基本都为空值,检查同一物料的AccessDB却是有值,如CAP_1630物料,导致搜索结果不一致。
+            这个问题应该是数据库后台问题,需要反馈。
+
+
+
 '''
 
 
@@ -20,7 +26,7 @@ Revision History:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 
 # 导入子模块
@@ -231,7 +237,7 @@ class Database:
         print(table_list)
         return table_list
 
-    def fetch(self, tableName, dbindex, PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby):
+    def fetch(self, tableName, dbindex, PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby, Description_Searchby, TechDescription_Searchby, Editor_Searchby):
         final_sql = ''
         # Determine DB_Type
         # 01-CONNECT Local(ODBC)
@@ -275,7 +281,10 @@ class Database:
             PartNo_Searchby=PartNo_Searchby,
             SAPNo_Searchby=SAPNo_Searchby,
             PartValue_Searchby=PartValue_Searchby,
-            MfcPartNum_Searchby=MfcPartNum_Searchby
+            MfcPartNum_Searchby=MfcPartNum_Searchby,
+            Description_Searchby=Description_Searchby,
+            TechDescription_Searchby=TechDescription_Searchby,
+            Editor_Searchby=Editor_Searchby
         )
 
         # 生成最终SQL
@@ -370,7 +379,7 @@ if __name__ == "__main__":
         # 
         db = Database()
         # 0: '01-CONNECT Local(ODBC)'; 1: '02-Access Online(ODBC)'; 2: '03-P Disk Access'; 3: '04-CONNECT DESTO(ODBC)'
-        index = 1  
+        index = 0  
         db.openDB(index, DBList, None)
         # 生成PartNumber条件
         # PartNo_Searchby = "res_232"       
@@ -381,11 +390,21 @@ if __name__ == "__main__":
         # 生成value条件
         PartValue_Searchby = "30K"    
         # PartValue_Searchby = "1U"    
-        # PartValue_Searchby = ""            
+        PartValue_Searchby = ""            
         # 生成manufact partnum 1-7的OR条件
         MfcPartNum_Searchby = "RC1206"   
-        # MfcPartNum_Searchby = ""   
-        sql_result, columnNameList = db.fetch('---All----', index, PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby)
+        MfcPartNum_Searchby = ""   
+        # 生成Description条件
+        Description_Searchby = "0402"
+        Description_Searchby = ""
+        # 生成TechDescription条件
+        TechDescription_Searchby = "FCN"
+        # TechDescription_Searchby = ""
+        # 生成Editor条件
+        Editor_Searchby = "guozhaolin"
+        Editor_Searchby = ""
+
+        sql_result, columnNameList = db.fetch('---All----', index, PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby, Description_Searchby, TechDescription_Searchby, Editor_Searchby)
         print("Column Names:\n", columnNameList)
         print("=====================================")
         print("SQL Result:\n", sql_result)
