@@ -1,26 +1,34 @@
-from flask import Flask, send_file , jsonify , request, redirect
-'''
-说明：
-使用Flask访问CONNECT DB并显示
-即制作网页版的CONNECT DB显示程序
-
-阶段实现说明：
-1. 已经实现原来Tkinter程序的功能：\01_Prg\10_Py\PythonCode\L_DB
-2. 设置最大显示数量是因为如果检索结果数量过多，渲染表格太大显示有问题。数据检索的条目不作限制，仅是限制了显示的数量。
-
-todo:
-1. 整个页面的样式太难看了，需要使用合适的ccs。
-2. Production系统如何Debug？
-
-?:
-1. 网页端选择了DB Selection下拉框之后，Part Type的列表没有办法更新，这是需要js来实现的吧？
-==>需要先有一个选择数据库的页面，而后跳转到新的检索页面，并且已经确认使用哪个数据。
-==>已经实现
 
 '''
+LastEditors: Mackey
+LastEditTime: 2024-04-29 15:30:00
+Introduction: 
+    Flask网页端访问CONNECT DB并显示
+    即制作网页版的CONNECT DB显示程序
+
+Revision History:
+1.0.0 - 20240422: 初始版本，实现CONNECT DB的网页端查询和Excel保存功能
+1.0.1 - 20240429: 修正了Excel保存功能的bug，之前保存的Excel文件无法打开
+1.1.0 - 20240506: 增加了对Access DB的支持，可以选择CONNECT DB和Access DB进行查询
+1.1.1 - 20240510: 修正了Access DB查询时的bug，之前查询结果不正确
+1.2.0 - 20240515: 优化了网页界面，增加了查询条件的输入框
+1.2.1 - 20240520: 修正了网页界面的一些显示问题，提升用户体验
+1.3.0 - 20240525: 增加了对AVL BOM导出的支持，可以从Windchill获取BOM并生成Excel文件, by Cyrus
+2.0.0 - 20260108: 重构代码结构，db_mgt.py使用PyPika进行SQL语句生成，提升代码可维护性和扩展性
+2.1.0 - 20260108: 将搜索的条件显示在页面
+2.2.0 - 20260108: 搜索条件输入内容在点击search之后不会清除
+2.3.0 - 20260108: 新增过滤条件“SAP_Description”"techdescription" "editor", 网页端增加输入框。
+'''
+
+# 版本号
+# xx.yy.zz
+# xx: 大版本，架构性变化
+# yy: 功能性新增
+# zz: Bug修复
+__Version__ = "2.3.0"
 
 import sys
-from flask import Flask, request, redirect, send_file
+from flask import Flask, send_file , jsonify , request, redirect
 from flask import render_template
 from flask.helpers import flash, url_for
 import pandas as pd  
@@ -151,9 +159,12 @@ def index(DBType):
             MfcPartNum_Searchby = request.form.get("MfcPartNum")
             MaxLine = int(request.form.get("MaxLine"))
             tableName  = request.form.get("tableName")
+            Description_Searchby = request.form.get("Description")
+            TechDescription_Searchby = request.form.get("TechDescription")
+            Editor_Searchby = request.form.get("Editor")
             Search_Info = f"PartNo: {PartNo_Searchby}, SAPNo: {SAPNo_Searchby}, PartValue: {PartValue_Searchby}, MfcPartNum: {MfcPartNum_Searchby}, MaxLine: {MaxLine}, TableName: {tableName}"
             dbindex = int(DBType)
-            sql_result, columnNameList = db.fetch(tableName, dbindex, PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby)
+            sql_result, columnNameList = db.fetch(tableName, dbindex, PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby, Description_Searchby, TechDescription_Searchby, Editor_Searchby)
             sql_result_len = len(sql_result)
             return render_template(
                 'index.html', 
@@ -167,7 +178,10 @@ def index(DBType):
                 SAPNo=SAPNo_Searchby,
                 PartValue=PartValue_Searchby,
                 MfcPartNum=MfcPartNum_Searchby,
-                tableName=tableName
+                tableName=tableName,
+                Description=Description_Searchby,
+                TechDescription=TechDescription_Searchby,
+                Editor=Editor_Searchby
                 )
             # return db_mgt.DBList[0]
         elif request.form['btn'] == 'SaveExcel':

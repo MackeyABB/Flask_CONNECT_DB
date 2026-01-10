@@ -72,11 +72,21 @@
 
         <fieldset>
             <legend>Search by (注意:1.不要使用通配符；2:以下条件为与AND关系)</legend>
-            <p><Label>Part No:<input name="PartNo" value="{{ PartNo|default('') }}"></Label></p>
-            <p><Label>SAP No:<input name="SAPNo" value="{{ SAPNo|default('') }}"></Label></p>
-            <p><Label>Part Value:<input name="PartValue" value="{{ PartValue|default('') }}"></Label></p>
-            <p><Label>Manufacturer PartNum:<input name="MfcPartNum" value="{{ MfcPartNum|default('') }}"></Label></p>
-            <p><label>Max Display Line:<input name="MaxLine" value="{{ MaxLine|default(1000) }}"></label></p>
+            <div style="display: flex; flex-wrap: wrap;">
+                <div style="flex: 1 1 50%; min-width: 300px;">
+                    <p><label>Part No:<input name="PartNo" value="{{ PartNo|default('') }}"></label></p>
+                    <p><label>SAP No:<input name="SAPNo" value="{{ SAPNo|default('') }}"></label></p>
+                    <p><label>SAP_Description:<input name="Description" value="{{ Description|default('') }}"></label></p>
+                    <p><label>Part Value:<input name="PartValue" value="{{ PartValue|default('') }}"></label></p>
+                    
+                </div>
+                <div style="flex: 1 1 50%; min-width: 300px;">
+                    <p><label>Manufacturer PartNum:<input name="MfcPartNum" value="{{ MfcPartNum|default('') }}"></label></p>
+                    <p><label>Tech Description:<input name="TechDescription" value="{{ TechDescription|default('') }}"></label></p>
+                    <p><label>Editor:<input name="Editor" value="{{ Editor|default('') }}"></label></p>
+                    <p><label>Max Display Line:<input name="MaxLine" value="{{ MaxLine|default(1000) }}"></label></p>
+                </div>
+            </div>
             <p><input type="submit" name="btn" value="Search"></p>
             <p><input type="submit" name="btn" value="SaveExcel"></p>            
         </fieldset>
