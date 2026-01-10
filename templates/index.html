@@ -76,19 +76,24 @@
                 <div style="flex: 1 1 50%; min-width: 300px;">
                     <p><label>Part No:<input name="PartNo" value="{{ PartNo|default('') }}"></label></p>
                     <p><label>SAP No:<input name="SAPNo" value="{{ SAPNo|default('') }}"></label></p>
-                    <p><label>SAP_Description:<input name="Description" value="{{ Description|default('') }}"></label></p>
+                    <p><label>SAP_Description:<input name="Description" value="{{ Description|default('') }}"></label>
+                    </p>
                     <p><label>Part Value:<input name="PartValue" value="{{ PartValue|default('') }}"></label></p>
-                    
+
                 </div>
                 <div style="flex: 1 1 50%; min-width: 300px;">
-                    <p><label>Manufacturer PartNum:<input name="MfcPartNum" value="{{ MfcPartNum|default('') }}"></label></p>
-                    <p><label>Tech Description:<input name="TechDescription" value="{{ TechDescription|default('') }}"></label></p>
+                    <p><label>Manufacturer PartNum:<input name="MfcPartNum"
+                                value="{{ MfcPartNum|default('') }}"></label></p>
+                    <p><label>Tech Description:<input name="TechDescription"
+                                value="{{ TechDescription|default('') }}"></label></p>
                     <p><label>Editor:<input name="Editor" value="{{ Editor|default('') }}"></label></p>
                     <p><label>Max Display Line:<input name="MaxLine" value="{{ MaxLine|default(1000) }}"></label></p>
                 </div>
             </div>
-            <p><input type="submit" name="btn" value="Search"></p>
-            <p><input type="submit" name="btn" value="SaveExcel"></p>            
+            <div style="margin-top: 15px;">
+                <input type="submit" name="btn" value="Search">
+                <input type="submit" name="btn" value="SaveExcel">
+            </div>
         </fieldset>
 
     </form>
@@ -98,18 +103,18 @@
     <fieldset>
         <legend>Search Result:</legend>
         <p>
-            <h3>Search Info: {{ Search_Info }}</h3>
+        <h3>Search Info: {{ Search_Info }}</h3>
         <p>
         <h3>Search Result Total Items: {{ sql_result_len }}</h3>
         </p>
         <p>
             {% if MaxLine is defined and MaxLine >= sql_result_len %}
-                <h3>Display Items: {{ sql_result_len }}</h3>
-            {% elif MaxLine is defined %}
-                <h3>Display Items: {{ MaxLine }} (Results exceed max display line, please refine your search conditions!)</h3>
-            {% else %}
-                <h3>Display Items: {{ sql_result_len }}</h3>
-            {% endif %}
+        <h3>Display Items: {{ sql_result_len }}</h3>
+        {% elif MaxLine is defined %}
+        <h3>Display Items: {{ MaxLine }} (Results exceed max display line, please refine your search conditions!)</h3>
+        {% else %}
+        <h3>Display Items: {{ sql_result_len }}</h3>
+        {% endif %}
         </p>
     </fieldset>
     <table>
