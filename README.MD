@@ -1,9 +1,11 @@
 开发环境： 
-    Python + Flask
+    Python + Flask + PyPika
 
 运行环境：
    Python 3.9+
-   add-on: Flask
+   add-on: 
+      Flask 2.0.2
+      PyPika 0.48.9
    实测未能运行在IIS环境下，需要单独通过Python程序运行。
 
 程序功能： 
@@ -11,6 +13,7 @@
     可以自行选择使用哪个数据库进行读取。
     需先选择器件类型，然后设置搜索条件进行查找。
 	20240129增加自动AVL生成功能，用于电子组未来所有AVL均由此生成再上传到WindChill --> by Cyrus -> 2025之后因PLM改双重验证登录，此功能已经无法使用，需要进行更新。
+   20260108后增加使用PyPika库进行
 
 Log:  
 1. 20240407: 添加检索Manufacturer Part Num的功能并实现。
@@ -27,7 +30,8 @@ git branch:
    IIS environment refactor branch.
    To let the code can run in IIS + WSGI
    --> access permission problem, pending.
-
+5. Refactor_PyPika
+   use PyPika lib to refactor the SQL generate method.
 
 ToDo List:
 1. 显示窗口有点难看，需要使用CCS进行润色 (Done)
@@ -58,9 +62,9 @@ ToDo List:
     Description:CONNECT DB for CDS Local
     Server:cn-w-7295178.cn.abb.com
     Database:limbas
-7. 对检索的结果进行排序 (Done)
+1. 对检索的结果进行排序 (Done)
    sql_fetch = sql_fetch + " ORDER BY PartNumber ASC" 
-8. IIS WSGI部署 (Pending) 
+2. IIS WSGI部署 (Pending) 
    依然存在的问题  
    a) UNC连接到P盘源目录，但是它的权限没有对IIS的用户配置开放，依然无法访问  
    b) log需要移植最新的easy_log过来  

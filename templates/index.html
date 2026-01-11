@@ -71,27 +71,67 @@
         </fieldset>
 
         <fieldset>
-            <legend>Search by (注意:1.不要使用通配符；2:同时仅一个条件有效</legend>
-            <p><Label>Part No:<input name=PartNo></Label></p>
-            <p><Label>SAP No:<input name=SAPNo></Label></p>
-            <p><Label>Part Value:<input name=PartValue></Label></p>
-            <p><Label>Manufacturer PartNum:<input name=MfcPartNum></Label></p>
-            <p><label>Max Display Line:<input name=MaxLine value=10></label></p>
-            <p><input type="submit" name="btn" value="Search"></p>
-            <p><input type="submit" name="btn" value="SaveExcel"></p>            
+            <legend>Search by (注意:1.不要使用通配符；2:以下条件为与AND关系)</legend>
+            <div style="display: flex; flex-wrap: wrap;">
+                <div style="flex: 1 1 50%; min-width: 300px;">
+                    <p><label>Part No:<input name="PartNo" value="{{ PartNo|default('') }}"></label></p>
+                    <p><label>SAP No:<input name="SAPNo" value="{{ SAPNo|default('') }}"></label></p>
+                    <p><label>SAP_Description:<input name="Description" value="{{ Description|default('') }}"></label>
+                    </p>
+                    <p><label>Part Value:<input name="PartValue" value="{{ PartValue|default('') }}"></label></p>
+
+                </div>
+                <div style="flex: 1 1 50%; min-width: 300px;">
+                    <p><label>Manufacturer PartNum:<input name="MfcPartNum"
+                                value="{{ MfcPartNum|default('') }}"></label></p>
+                    <p><label>Tech Description:<input name="TechDescription"
+                                value="{{ TechDescription|default('') }}"></label></p>
+                    <p><label>Editor:<input name="Editor" value="{{ Editor|default('') }}"></label></p>
+                    <p><label>Max Display Line:<input name="MaxLine" value="{{ MaxLine|default(1000) }}"></label></p>
+                </div>
+            </div>
+            <div style="margin-top: 15px;">
+                <input type="submit" name="btn" value="Search">
+                <input type="submit" name="btn" value="SaveExcel">
+            </div>
         </fieldset>
 
     </form>
 
+    <!-- AVL处理表单 -->
+    <form method="post">
+        <fieldset>
+            <legend>AVL handling</legend>
+            <p><label>Please input the SAP_Number(One per line):</label></p>
+            <p>
+                <label>
+                    <textarea name="SAP_Number_List" rows="5" style="width:200px; max-width:500px; resize:vertical; overflow-y:auto;">{{ SAP_Number_List|default('') }}</textarea>
+                </label>
+            </p>
+
+            <div style="margin-top: 15px;">
+                <input type="submit" name="btn" value="AVL_Search">
+                <input type="submit" name="btn" value="AVL_Save">
+            </div>
+        </fieldset>
+    </form>
 
     <!--显示检索结果-->
     <fieldset>
         <legend>Search Result:</legend>
         <p>
+        <h3>Search Info: {{ Search_Info }}</h3>
+        <p>
         <h3>Search Result Total Items: {{ sql_result_len }}</h3>
         </p>
         <p>
-        <h3>Dispaly Items: {{ MaxLine }}</h3>
+            {% if MaxLine is defined and MaxLine >= sql_result_len %}
+        <h3>Display Items: {{ sql_result_len }}</h3>
+        {% elif MaxLine is defined %}
+        <h3>Display Items: {{ MaxLine }} (Results exceed max display line, please refine your search conditions!)</h3>
+        {% else %}
+        <h3>Display Items: {{ sql_result_len }}</h3>
+        {% endif %}
         </p>
     </fieldset>
     <table>
