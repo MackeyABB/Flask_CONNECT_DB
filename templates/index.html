@@ -98,6 +98,23 @@
 
     </form>
 
+    <!-- AVL处理表单 -->
+    <form method="post">
+        <fieldset>
+            <legend>AVL handling</legend>
+            <p><label>Please input the SAP_Number(One per line):</label></p>
+            <p>
+                <label>
+                    <textarea name="SAP_Number_List" rows="5" style="width:200px; max-width:500px; resize:vertical; overflow-y:auto;">{{ SAP_Number_List|default('') }}</textarea>
+                </label>
+            </p>
+
+            <div style="margin-top: 15px;">
+                <input type="submit" name="btn" value="AVL_Search">
+                <input type="submit" name="btn" value="AVL_Save">
+            </div>
+        </fieldset>
+    </form>
 
     <!--显示检索结果-->
     <fieldset>
