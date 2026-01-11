@@ -58,6 +58,7 @@
     </p>
     <!--表单：接收检索条件-->
     <form method="post">
+        <!-- 检索的Part Type 选择-->
         <fieldset>
             <legend>Please Select the Part Type</legend>
             <P>
@@ -70,6 +71,7 @@
             </P>
         </fieldset>
 
+        <!-- 条件检索 -->
         <fieldset>
             <legend>Search by (注意:1.不要使用通配符；2:以下条件为与AND关系)</legend>
             <div style="display: flex; flex-wrap: wrap;">
@@ -95,25 +97,21 @@
                 <input type="submit" name="btn" value="SaveExcel">
             </div>
         </fieldset>
-
-    </form>
-
-    <!-- AVL处理表单 -->
-    <form method="post">
+        
+        <!-- AVL处理表单 -->
         <fieldset>
-            <legend>AVL handling</legend>
-            <p><label>Please input the SAP_Number(One per line):</label></p>
+            <legend>SAP Number List Search (Multiple SAP Numbers separated by space, comma, or semicolon or one per line)</legend>
             <p>
-                <label>
-                    <textarea name="SAP_Number_List" rows="5" style="width:200px; max-width:500px; resize:vertical; overflow-y:auto;">{{ SAP_Number_List|default('') }}</textarea>
-                </label>
+                <label>Enter SAP Numbers:</label><br>
+                <textarea name="SAP_Number_List" rows="4" cols="50" 
+                    style="width:200px; max-width:500px; resize:vertical; overflow-y:auto;"
+                    placeholder="E.g., 2TFU902013U1001, 2TFU902014U1001; 2TFU902015U1001 2TFU902016U1001">{{ SAP_Number_List|default('') }}</textarea>
             </p>
-
             <div style="margin-top: 15px;">
-                <input type="submit" name="btn" value="AVL_Search">
+                <input type="submit" name="btn" value="SAP_Nums_Search">
                 <input type="submit" name="btn" value="AVL_Save">
             </div>
-        </fieldset>
+        </fieldset>        
     </form>
 
     <!--显示检索结果-->

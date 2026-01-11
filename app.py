@@ -18,6 +18,7 @@ Revision History:
 2.1.0 - 20260108: 将搜索的条件显示在页面
 2.2.0 - 20260108: 搜索条件输入内容在点击search之后不会清除
 2.3.0 - 20260108: 新增过滤条件“SAP_Description”"techdescription" "editor", 网页端增加输入框。
+2.4.0 - 20260108: 支持多个SAP编号的批量查询，输入多个SAP编号，按空格、逗号、分号分隔， 未完成保存Excel功能
 '''
 
 # 版本号
@@ -25,7 +26,7 @@ Revision History:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "2.3.0"
+__Version__ = "2.4.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -145,27 +146,45 @@ def index(DBType):
     
     # 提交表单查询时处理
     if request.method == "POST":
+        # 定义全局变量
+        global sql_result
+        global columnNameList
+        global MaxLine
+        global sql_result_len
+        dbindex = int(DBType)      
+        # 获取表单内容
+        tableName  = request.form.get("tableName")        
+        PartNo_Searchby = request.form.get("PartNo")
+        SAPNo_Searchby = request.form.get("SAPNo")
+        PartValue_Searchby = request.form.get("PartValue")
+        MfcPartNum_Searchby = request.form.get("MfcPartNum")
+        MaxLine_str = request.form.get("MaxLine")
+        MaxLine = int(MaxLine_str) if MaxLine_str is not None and MaxLine_str.strip() != "" else 100  # default to 100 if not provided
+        Description_Searchby = request.form.get("Description")
+        TechDescription_Searchby = request.form.get("TechDescription")
+        Editor_Searchby = request.form.get("Editor")        
+        SAP_Number_List = request.form.get("SAP_Number_List")
+            
+                  
         # 判断按键
         print("press the button:" + request.form['btn'])
         if request.form['btn'] == 'Search':
-            # 获取检索条件
-            global sql_result
-            global columnNameList
-            global MaxLine
-            global sql_result_len
-            PartNo_Searchby = request.form.get("PartNo")
-            SAPNo_Searchby = request.form.get("SAPNo")
-            PartValue_Searchby = request.form.get("PartValue")
-            MfcPartNum_Searchby = request.form.get("MfcPartNum")
-            MaxLine = int(request.form.get("MaxLine"))
-            tableName  = request.form.get("tableName")
-            Description_Searchby = request.form.get("Description")
-            TechDescription_Searchby = request.form.get("TechDescription")
-            Editor_Searchby = request.form.get("Editor")
+            # 条件搜索
             Search_Info = f"PartNo: {PartNo_Searchby}, SAPNo: {SAPNo_Searchby}, PartValue: {PartValue_Searchby}, MfcPartNum: {MfcPartNum_Searchby}, MaxLine: {MaxLine}, TableName: {tableName}"
-            dbindex = int(DBType)
-            sql_result, columnNameList = db.fetch(tableName, dbindex, PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby, Description_Searchby, TechDescription_Searchby, Editor_Searchby)
+            # 执行搜索
+            sql_result, columnNameList = db.fetch(
+                tableName=tableName, 
+                dbindex=dbindex, 
+                PartNo_Searchby=PartNo_Searchby, 
+                SAPNo_Searchby=SAPNo_Searchby, 
+                PartValue_Searchby=PartValue_Searchby, 
+                MfcPartNum_Searchby=MfcPartNum_Searchby, 
+                Description_Searchby=Description_Searchby, 
+                TechDescription_Searchby=TechDescription_Searchby, 
+                Editor_Searchby=Editor_Searchby
+            )
             sql_result_len = len(sql_result)
+            # 显示结果
             return render_template(
                 'index.html', 
                 Part_Type_List=Part_Type_List, 
@@ -213,6 +232,37 @@ def index(DBType):
             else:
                 flash("没有数据，无法保存Excel！")
                 return render_template('index.html', Part_Type_List=Part_Type_List)
+        elif request.form['btn'] == 'SAP_Nums_Search':
+            # 搜索多个SAP编号
+            # 处理多个SAP编号的输入，按空格、逗号、分号分隔
+            print("SAP_Nums_Search")
+            SAP_Nums_List = re.split(r'[\s,;]+', SAP_Number_List.strip())
+            print(SAP_Nums_List)
+
+            sql_result = []
+            for SAPNo_Searchby in SAP_Nums_List:
+                sql_result_each, columnNameList = db.fetch(
+                    tableName=tableName, 
+                    dbindex=dbindex, 
+                    PartNo_Searchby='',
+                    SAPNo_Searchby=SAPNo_Searchby,
+                    PartValue_Searchby='',
+                    MfcPartNum_Searchby='',
+                    Description_Searchby='',
+                    TechDescription_Searchby='',
+                    Editor_Searchby=''
+                    )
+                sql_result.append(sql_result_each[0])
+            sql_result_len = len(sql_result)
+            return render_template(
+                'index.html',
+                Part_Type_List=Part_Type_List,
+                sql_result=sql_result,
+                columnNameList=columnNameList,  
+                sql_result_len=sql_result_len,
+                SAP_Nums=SAP_Number_List,
+                MaxLine=MaxLine
+                )
         else:
             return render_template('index.html', Part_Type_List=Part_Type_List)
     else:
