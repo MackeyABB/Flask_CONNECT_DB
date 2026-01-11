@@ -1,10 +1,45 @@
 '''
-todo:
+Introduction:
+This module provides a set of classes and functions to manage database connections and queries for different database systems. 
+It supports multiple database types, including ODBC connections for local and online databases.
+
+Revision History:
+1.0.0 - 标注版本号的第一个版本, 在进行代码重构之前的版本.
+2.0.0 - 20260108:使用PyPika子模块进行代码重构，优化数据库连接管理。
+        相关文件: db_mgt.py, third_party/PyPika_CONNECT/PyPika/PyPika_CONNECT.py
+        更新函数: fetch()
+        功能影响: 
+        1.单PartType搜索输出列表跟All PartType时一样
+        2.All PartType搜索各个条件可以同时使用为AND关系
+2.1.0 - 20240610: 新增过滤条件“Description”"techdescription" "editor"到fetch函数中。
+        注意:
+            SAPMaxDB中Editor字段基本都为空值,检查同一物料的AccessDB却是有值,如CAP_1630物料,导致搜索结果不一致。
+            这个问题应该是数据库后台问题,需要反馈。
+
+
 
 '''
 
 
+# 版本号
+# xx.yy.zz
+# xx: 大版本，架构性变化
+# yy: 功能性新增
+# zz: Bug修复
+__version__ = "2.1.0"
+
+
+# 导入子模块
+# 直接按目录结构导入，无需sys.path
+# 方法一:
+# from third_party.PyPika_CONNECT.PyPika.PyPika_CONNECT import *
+# print("PyPika_CONNECT Version:", __version__)
+# 方法二:
+import third_party.PyPika_CONNECT.PyPika.PyPika_CONNECT as PyPika_CONNECT
+# print("Imported PyPika_CONNECT Version:", PyPika_CONNECT.__version__)
+
 import pypyodbc
+
 
 
 # windows parameter
@@ -138,9 +173,18 @@ class Database:
         # 04-CONNECT DESTO(ODBC)
         elif dbindex == 3:
             pass
-
    
     def openDB(self, dbindex, dblist, app):
+        """Open a database connection.
+
+        Args:
+            dbindex (int): The index of the database to connect to.
+            dblist (list): The list of database names.  
+            app (_type_): Flask app for logging.
+
+        Returns:
+            _type_: True if the connection is successful, False otherwise.
+        """
         # 01-CONNECT Local(ODBC)
         if dbindex == 0:
             connStr = "DSN=CIS_Local;Uid=LIMBAS2USER;Pwd=LIMBASREAD;"
@@ -152,7 +196,7 @@ class Database:
             print(dblist[dbindex])
         # 03-P Disk Access
         elif dbindex == 2:
-            connStr = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=P:\Cadence\CIS_DB_OL\CIS_PartLib.mdb;SystemDB=P:\Cadence\CIS_DB_OL\CIS_PartLib.mdw;Uid=cadence_port;Pwd=Cadence_CIS.3;"
+            connStr = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=P:\Cadence\CIS_DB\CIS_PartLib.mdb;SystemDB=P:\Cadence\CIS_DB\CIS_PartLib.mdw;Uid=cadence_port;Pwd=Cadence_CIS.3;"
             print(dblist[dbindex])
         elif dbindex == 3:
             connStr = "DSN=CIS_DESTO;Uid=LIMBAS2USER;Pwd=LIMBASREAD;"
@@ -170,206 +214,94 @@ class Database:
             # print(e)
             return False
     
-    def listTable(self):    
+    def listTable(self, dbindex):    
+        """List all tables in the database.
+
+        Args:
+            dbindex (int): The index of the database to list tables from.
+
+        Returns:
+            list: A list of table names.
+        """
         # get the table list
-        sql_listTable = "SELECT NAME FROM MSYSOBJECTS WHERE TYPE=1 AND FLAGS=0;"
+        # 01-CONNECT Local(ODBC)
+        if dbindex == 0 or dbindex == 3:
+            # SAPMaxDB数据库获取表名的SQL语句
+            sql_listTable = "select table_name from all_tables"
+        # 02-Access Online(ODBC) and 03-P Disk Access
+        elif dbindex == 1 or dbindex == 2:
+            # Access数据库获取表名的SQL语句
+            sql_listTable = "SELECT NAME FROM MSYSOBJECTS WHERE TYPE=1 AND FLAGS=0;"
         self.cursor.execute(sql_listTable)
         table_list = self.cursor.fetchall()
         print(table_list)
         return table_list
-        
 
-    def fetch(self, tableName, dbindex, PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby):
-        
-        # if not search all
+    def fetch(self, tableName, dbindex, PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby, Description_Searchby, TechDescription_Searchby, Editor_Searchby):
+        final_sql = ''
+        # Determine DB_Type
+        # 01-CONNECT Local(ODBC)
+        # SAPMaxDB数据库获取表名的SQL语句
+        if dbindex == 0 or dbindex == 3:
+            DB_Type = "SAPMaxDB"
+        # 02-Access Online(ODBC) and 03-P Disk Access
+        # AccessDB数据库获取表名的SQL语句
+        elif dbindex == 1 or dbindex == 2: 
+            DB_Type = "AccessDB"
+        print("Database Type:", DB_Type)
+
+        # 仅需要单独判断是搜索某个表还是所有表
+        # if not search all, search specified table
         if tableName != '---All----':
-            # fetch data
-            # 01-CONNECT Local(ODBC)
-            if dbindex == 0 or dbindex == 3:
-                # 无条件检索
-                if (PartNo_Searchby == '') and (SAPNo_Searchby == '') and (PartValue_Searchby == '') and (MfcPartNum_Searchby == ''):
-                    # 注意：SQL语句，最后不要添加;结束符号
-                    sql_fetch = "SELECT * FROM {}".format(tableName)
-                    # sql_fetch =  "SELECT * FROM RESISTORS where PARTNUMBER = 'RES_1868'"
-                else:
-                    print(PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby)
-                    # 仅一个条件有效
-                    sql_fetch = "SELECT * FROM {} ".format(tableName)
-                    # SQL语句最后不添加;也不会出错的哦
-                    # SAP MAXDB检索区分大小写的COLLATE Latin1_General_CS_AS
-                    if PartNo_Searchby != '':
-                        sql_append = "WHERE LOWER(PartNumber) LIKE LOWER(\'%{}%\')".format(PartNo_Searchby)
-                    elif SAPNo_Searchby != '':
-                        sql_append = "WHERE LOWER(SAP_Number) LIKE LOWER(\'%{}%\')".format(SAPNo_Searchby)
-                    elif PartValue_Searchby != '':
-                        sql_append = "WHERE LOWER(Value_1) LIKE LOWER(\'%{}%\')".format(PartValue_Searchby)
-                    elif MfcPartNum_Searchby != '':
-                        for index, MfcPartNum in enumerate(MftPartNumList_SAPMax):
-                            if index == 0:
-                                sql_append = "WHERE LOWER({}) LIKE LOWER(\'%{}%\')".format(MfcPartNum, MfcPartNum_Searchby)
-                            else:
-                                sql_append = "{} OR LOWER({}) LIKE LOWER(\'%{}%\')".format(sql_append, MfcPartNum, MfcPartNum_Searchby)
-
-                    sql_fetch = sql_fetch + sql_append
-                # SQL结果排序
-                sql_fetch = sql_fetch + " ORDER BY PartNumber ASC" 
-                print(sql_fetch)
-
-                self.cursor.execute(sql_fetch)
-                # columns = [column[0] for column in cursor.description]
-                columnNameList = [column[0] for column in self.cursor.description]
-                sql_result = self.cursor.fetchall()
-                # print(sql_result)
-                return sql_result, columnNameList
-            # 02-Access Online(ODBC) and 03-P Disk Access
-            elif dbindex == 1 or dbindex == 2:
-                # 无条件检索
-                if (PartNo_Searchby == '') and (SAPNo_Searchby == '') and (PartValue_Searchby == '') and (MfcPartNum_Searchby == ''):
-                    sql_fetch = "SELECT * FROM [{}];".format(tableName)
-                # 条件检索
-                else:
-                    print(PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby)
-                    # 仅一个条件有效
-                    sql_fetch = "SELECT * FROM [{}] ".format(tableName)
-                    # SQL语句最后不添加;也不会出错的哦
-                    if PartNo_Searchby != '':
-                        sql_append = "WHERE PartNumber LIKE \'%{}%\'".format(PartNo_Searchby)
-                    elif SAPNo_Searchby != '':
-                        sql_append = "WHERE SAP_Number LIKE \'%{}%\'".format(SAPNo_Searchby)
-                    elif PartValue_Searchby != '':
-                        sql_append = "WHERE Value LIKE \'%{}%\'".format(PartValue_Searchby)
-                    elif MfcPartNum_Searchby != '':
-                        for index, MfcPartNum in enumerate(MftPartNumList_Access):
-                            if index == 0:
-                                sql_append = "WHERE {} LIKE \'%{}%\'".format(MfcPartNum, MfcPartNum_Searchby)
-                            else:
-                                sql_append = "{} OR {} LIKE \'%{}%\'".format(sql_append, MfcPartNum, MfcPartNum_Searchby)
-
-                    sql_fetch = sql_fetch + sql_append
-                # SQL结果排序
-                sql_fetch = sql_fetch + " ORDER BY PartNumber ASC" 
-                print(sql_fetch)
-
-                self.cursor.execute(sql_fetch)
-                # columns = [column[0] for column in cursor.description]
-                columnNameList = [column[0] for column in self.cursor.description]
-                sql_result = self.cursor.fetchall()
-                # print(sql_result)
-                return sql_result, columnNameList
-            # 03-P Disk Access
-            # elif dbindex == 2:
-            #     pass
+            TABLES = []
+            # Determine TABLES and FIELDS based on DB_Type
+            if DB_Type == "AccessDB":
+                # AccessDB
+                TABLES.append(f"[{tableName}]")
+                FIELDS = PyPika_CONNECT.FIELDS_AccessDB
+            else:
+                # SAPMaxDB
+                TABLES.append(f"{tableName}")
+                FIELDS = PyPika_CONNECT.FIELDS_SAPMaxDB
         # serach all table
-        else:
-            # fetch data
-            # select_fields = 'PartNumber,value,SAP_Number,SAP_Description'
+        else:          
+            # Determine TABLES and FIELDS based on DB_Type
+            if DB_Type == "AccessDB":
+                # AccessDB
+                TABLES = PyPika_CONNECT.TABLES_AccessDB
+                FIELDS = PyPika_CONNECT.FIELDS_AccessDB
+            else:
+                # SAPMaxDB
+                TABLES = PyPika_CONNECT.TABLES_SAPMaxDB
+                FIELDS = PyPika_CONNECT.FIELDS_SAPMaxDB
             
-            sql_fetch = ''
-            # 01-CONNECT Local(ODBC)
-            if dbindex == 0 or dbindex == 3:
-                select_fields = 'PartNumber,value_1,SAP_Number,SAP_Description,status,parttype,manufact_1,manufact_partnum_1,datasheet_1,manufact_2,manufact_partnum_2,datasheet_2,manufact_3,manufact_partnum_3,datasheet_3,manufact_4,manufact_partnum_4,datasheet_4,manufact_5,manufact_partnum_5,datasheet_5,manufact_6,manufact_partnum_6,datasheet_6,manufact_7,manufact_partnum_7,datasheet_7,scm_symbol,pcb_footprint,alt_symbols,mounttechn,ad_symbol,ad_footprint,ad_alt_footprint, detaildrawing,Status,Editor,US_technology,TechDescription'   #Different DB with different column name
-                # 无条件检索
-                if (PartNo_Searchby == '') and (SAPNo_Searchby == '') and (PartValue_Searchby == '') and (MfcPartNum_Searchby == ''):
-                    # 注意：SQL语句，最后不要添加;结束符号
-                    for index, tableName in enumerate(PartTypeList_CONNECT_4All_Search):
-                        if index == 0:
-                            sql_fetch = "SELECT {} FROM {}".format(select_fields, tableName)
-                        else:
-                            sql_fetch = "SELECT {} FROM {} UNION ALL ({})".format(select_fields, tableName,sql_fetch)
-                    # print(sql_fetch)   
-                # 条件检索
-                else:
-                    print(PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby)
-                    # SAP MAXDB检索区分大小写的COLLATE Latin1_General_CS_AS
-                    if PartNo_Searchby != '':
-                        sql_append = "WHERE LOWER(PartNumber) LIKE LOWER(\'%{}%\')".format(PartNo_Searchby)
-                    elif SAPNo_Searchby != '':
-                        sql_append = "WHERE LOWER(SAP_Number) LIKE LOWER(\'%{}%\')".format(SAPNo_Searchby)
-                    elif PartValue_Searchby != '':
-                        sql_append = "WHERE LOWER(Value_1) LIKE LOWER(\'%{}%\')".format(PartValue_Searchby)
-                    elif MfcPartNum_Searchby != '':
-                        for index, MfcPartNum in enumerate(MftPartNumList_SAPMax):
-                            if index == 0:
-                                sql_append = "WHERE LOWER({}) LIKE LOWER(\'%{}%\')".format(MfcPartNum, MfcPartNum_Searchby)
-                            else:
-                                sql_append = "{} OR LOWER({}) LIKE LOWER(\'%{}%\')".format(sql_append, MfcPartNum, MfcPartNum_Searchby)
-                    
-                    for index, tableName in enumerate(PartTypeList_CONNECT_4All_Search):
-                        # 每个table的SQL语句
-                        sql_each = "SELECT {} FROM {} ".format(select_fields, tableName)
-                        # SQL语句最后不添加;也不会出错的哦                        
-                        sql_each = sql_each + sql_append
-                        
-                        # 以下进行组合
-                        if index == 0:
-                            sql_fetch = sql_each
-                        else:                            
-                            sql_fetch = "{} UNION ALL ({})".format(sql_each,sql_fetch)
-                
-                # SQL结果排序
-                sql_fetch = sql_fetch + " ORDER BY PartNumber ASC"
-                             
-                print(sql_fetch)
+        # 生成过滤条件
+        FILTER_CONDITIONS = PyPika_CONNECT.generate_filter_conditions(
+            DB_Type=DB_Type,
+            PartNo_Searchby=PartNo_Searchby,
+            SAPNo_Searchby=SAPNo_Searchby,
+            PartValue_Searchby=PartValue_Searchby,
+            MfcPartNum_Searchby=MfcPartNum_Searchby,
+            Description_Searchby=Description_Searchby,
+            TechDescription_Searchby=TechDescription_Searchby,
+            Editor_Searchby=Editor_Searchby
+        )
 
-                self.cursor.execute(sql_fetch)
-                # columns = [column[0] for column in cursor.description]
-                columnNameList = [column[0] for column in self.cursor.description]
-                sql_result = self.cursor.fetchall()
-                # print(sql_result)
-                return sql_result, columnNameList
-                        # 02-Access Online(ODBC) and 03-P Disk Access
-            # 02-Access Online(ODBC) and 03-P Disk Access
-            elif dbindex == 1 or dbindex == 2: 
-                select_fields = 'PartNumber,value,SAP_Number,SAP_Description,status,parttype,[manufact 1],[manufact partnum 1],[datasheet 1],[manufact 2],[manufact partnum 2],[datasheet 2],[manufact 3],[manufact partnum 3],[datasheet 3],[manufact 4],[manufact partnum 4],[datasheet 4],[manufact 5],[manufact partnum 5],[datasheet 5],[manufact 6],[manufact partnum 6],[datasheet 6],[manufact 7],[manufact partnum 7],[datasheet 7],scm_symbol,pcb_footprint,pcb_footprint_cp,alt_symbols,alt_symbols_cp,mounttechn,ad_symbol,ad_footprint,ad_alt_footprint,detaildrawing,STATUS,EDITOR,US_TECHNOLOGY,TECHDESCRIPTION'   #Different DB with different column name
-                # 无条件检索
-                if (PartNo_Searchby == '') and (SAPNo_Searchby == '') and (PartValue_Searchby == '') and (MfcPartNum_Searchby == ''):
-                    # 注意：SQL语句，最后不要添加;结束符号
-                    for index, tableName in enumerate(PartTypeList_Access_4All_Search):
-                        if index == 0:
-                            sql_fetch = "SELECT {} FROM [{}]".format(select_fields, tableName)
-                        else:
-                            sql_fetch = "SELECT {} FROM [{}] UNION ALL ({})".format(select_fields, tableName,sql_fetch)
-                    print(sql_fetch)
-                # 条件检索
-                else:
-                    print(PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby)
-                    # SAP MAXDB检索区分大小写的COLLATE Latin1_General_CS_AS
-                    if PartNo_Searchby != '':
-                        sql_append = "WHERE PartNumber LIKE \'%{}%\'".format(PartNo_Searchby)
-                    elif SAPNo_Searchby != '':
-                        sql_append = "WHERE SAP_Number LIKE \'%{}%\'".format(SAPNo_Searchby)
-                    elif PartValue_Searchby != '':
-                        sql_append = "WHERE Value LIKE \'%{}%\'".format(PartValue_Searchby)
-                    elif MfcPartNum_Searchby != '':
-                        for index, MfcPartNum in enumerate(MftPartNumList_Access):
-                            if index == 0:
-                                sql_append = "WHERE {} LIKE \'%{}%\'".format(MfcPartNum, MfcPartNum_Searchby)
-                            else:
-                                sql_append = "{} OR {} LIKE \'%{}%\'".format(sql_append, MfcPartNum, MfcPartNum_Searchby)
-                    
-                    for index, tableName in enumerate(PartTypeList_Access_4All_Search):
-                        # 每个table的SQL语句
-                        sql_each = "SELECT {} FROM [{}] ".format(select_fields, tableName)
-                        # SQL语句最后不添加;也不会出错的哦                        
-                        sql_each = sql_each + sql_append
-                        
-                        # 以下进行组合
-                        if index == 0:
-                            sql_fetch = sql_each
-                        else:                            
-                            sql_fetch = "{} UNION ALL ({})".format(sql_each,sql_fetch)
-                # SQL结果排序
-                sql_fetch = sql_fetch + " ORDER BY PartNumber ASC"            
-                print(sql_fetch)
-
-                self.cursor.execute(sql_fetch)
-                # columns = [column[0] for column in cursor.description]
-                columnNameList = [column[0] for column in self.cursor.description]
-                sql_result = self.cursor.fetchall()
-                # print(sql_result)
-                return sql_result, columnNameList
-                        # 02-Access Online(ODBC) and 03-P Disk Access
-
+        # 生成最终SQL
+        final_sql = PyPika_CONNECT.build_final_sql(
+            tables=TABLES,
+            fields=FIELDS,
+            filter_conditions=FILTER_CONDITIONS,
+            order_by_field="PartNumber",
+            order="ASC"
+        )
+        print("Generated SQL:\n", final_sql)
+        self.cursor.execute(final_sql)
+        columnNameList = [column[0] for column in self.cursor.description]
+        sql_result = self.cursor.fetchall()
+        # print(sql_result)
+        return sql_result, columnNameList
+        
     def openAcc(self):
         MDB="C:\inetpub\wwwroot\db\#PrJRcd.mdb"
         connStr="DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ="+MDB+";PWD=ABBabbELE;"
@@ -433,6 +365,53 @@ class Database:
         #print(sql_result)
         return sql_result
 
+if __name__ == "__main__":
+    try:
+        # test the listTable function
+        # print("Testing listTable function:")
+        # db = Database()
+        # for index, dbname in enumerate(DBList):
+        #     print("=====================================")
+        #     print("index:", index, "\ndbname:", dbname)
+        #     db.openDB(index, DBList, None)
+        #     db.listTable(index)
+        
+        # 
+        db = Database()
+        # 0: '01-CONNECT Local(ODBC)'; 1: '02-Access Online(ODBC)'; 2: '03-P Disk Access'; 3: '04-CONNECT DESTO(ODBC)'
+        index = 0  
+        db.openDB(index, DBList, None)
+        # 生成PartNumber条件
+        # PartNo_Searchby = "res_232"       
+        PartNo_Searchby = ""       
+         # 生成SAP_Number条件
+        SAPNo_Searchby = "2tf"         
+        # SAPNo_Searchby = ""          
+        # 生成value条件
+        PartValue_Searchby = "30K"    
+        # PartValue_Searchby = "1U"    
+        PartValue_Searchby = ""            
+        # 生成manufact partnum 1-7的OR条件
+        MfcPartNum_Searchby = "RC1206"   
+        MfcPartNum_Searchby = ""   
+        # 生成Description条件
+        Description_Searchby = "0402"
+        Description_Searchby = ""
+        # 生成TechDescription条件
+        TechDescription_Searchby = "FCN"
+        # TechDescription_Searchby = ""
+        # 生成Editor条件
+        Editor_Searchby = "guozhaolin"
+        Editor_Searchby = ""
+
+        sql_result, columnNameList = db.fetch('---All----', index, PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby, Description_Searchby, TechDescription_Searchby, Editor_Searchby)
+        print("Column Names:\n", columnNameList)
+        print("=====================================")
+        print("SQL Result:\n", sql_result)
+
+    except Exception as e:
+        print("Error:", e)
+        pass
 
 
 

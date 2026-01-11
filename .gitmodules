@@ -1,0 +1,4 @@
+[submodule "third_party/PyPika_CONNECT"]
+	path = third_party/PyPika_CONNECT
+	url = https://github.com/MackeyABB/Py_L_DB.git
+	branch = PyPika
