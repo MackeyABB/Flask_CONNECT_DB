@@ -19,6 +19,7 @@ Revision History:
 2.2.0 - 20260108: 搜索条件输入内容在点击search之后不会清除
 2.3.0 - 20260108: 新增过滤条件“SAP_Description”"techdescription" "editor", 网页端增加输入框。
 2.4.0 - 20260108: 支持多个SAP编号的批量查询，输入多个SAP编号，按空格、逗号、分号分隔， 未完成保存Excel功能
+2.5.0 - 20260111: 完成多个SAP编号的批量查询结果直接保存为Excel文件功能
 '''
 
 # 版本号
@@ -26,7 +27,7 @@ Revision History:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "2.4.0"
+__Version__ = "2.5.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
