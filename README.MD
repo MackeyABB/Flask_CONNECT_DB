@@ -42,7 +42,18 @@
 6. Production  
    branch for production.  
    The server can sync this branch directly in production environment.  
-
+   在其它PC同步仓库代码方法：  
+      因为工程现在包括两个仓库Repos1, Repos2  
+      其它需要同步时，先同步Repos1，  
+      此时Repos2子模块对应的目录是空的，没有同步Repos2的代码下来  
+      对于Repos2是作为子模块添加，还需要进行同步  
+      可以执行 (工程根目录下运行)
+      1	# 重新初始化所有子模块（也可以指定具体子模块）  
+         git submodule init  
+      2	# 更新子模块， 其中最后信息为子模块在本工程的路径  
+         git submodule update --remote third_party\PyPika_CONNECT  
+      经过以上处理之后，就可以同步整个工程到本地了。
+   
 # ToDo List:
 1. 显示窗口有点难看，需要使用CCS进行润色 (Done)  
     index.html页面添加ccs代码格式化表格显示，表头可固定  
