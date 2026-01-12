@@ -303,8 +303,9 @@ class Database:
         return sql_result, columnNameList
         
     def openAcc(self):
-        MDB="C:\inetpub\wwwroot\db\#PrJRcd.mdb"
-        connStr="DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ="+MDB+";PWD=ABBabbELE;"
+        MDB=r"C:\inetpub\wwwroot\db\#PrJRcd.mdb"    # 此目录需要特殊权限才能访问，调试或运行时请注意，权限不足会报错，如pypyodbc.ProgrammingError: ('42000', '[42000] [Microsoft][ODBC Microsoft Access Driver] Not a valid password.')
+        # MDB=r"C:\Temp\#PrJRcd.mdb"  # 测试用临时目录
+        connStr = f"DRIVER={{Microsoft Access Driver (*.mdb, *.accdb)}};DBQ={MDB};PWD=ABBabbELE;"
         try:
             self.conn = pypyodbc.connect(connStr, timeout=20, readonly=True)
             self.cursor = self.conn.cursor()
