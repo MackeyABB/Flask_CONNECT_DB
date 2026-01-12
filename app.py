@@ -20,6 +20,7 @@ Revision History:
 2.3.0 - 20260108: 新增过滤条件“SAP_Description”"techdescription" "editor", 网页端增加输入框。
 2.4.0 - 20260108: 支持多个SAP编号的批量查询，输入多个SAP编号，按空格、逗号、分号分隔， 未完成保存Excel功能
 2.5.0 - 20260111: 完成多个SAP编号的批量查询结果直接保存为Excel文件功能
+2.6.0 - 20240610: 在网页端显示软件版本号
 '''
 
 # 版本号
@@ -27,7 +28,7 @@ Revision History:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "2.5.0"
+__Version__ = "2.6.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -201,7 +202,8 @@ def index(DBType):
                 tableName=tableName,
                 Description=Description_Searchby,
                 TechDescription=TechDescription_Searchby,
-                Editor=Editor_Searchby
+                Editor=Editor_Searchby,
+                Version=__Version__
                 )
             # return db_mgt.DBList[0]
         elif request.form['btn'] == 'SaveExcel':
@@ -232,7 +234,7 @@ def index(DBType):
                 # return render_template('index.html', Part_Type_List=Part_Type_List, MaxLine=MaxLine, sql_result=sql_result, columnNameList=columnNameList, sql_result_len=sql_result_len)
             else:
                 flash("没有数据，无法保存Excel！")
-                return render_template('index.html', Part_Type_List=Part_Type_List)
+                return render_template('index.html', Part_Type_List=Part_Type_List,Version=__Version__)
         elif request.form['btn'] == 'SAP_Nums_Search':
             # 搜索多个SAP编号
             # 处理多个SAP编号的输入，按空格、逗号、分号分隔
@@ -262,12 +264,13 @@ def index(DBType):
                 columnNameList=columnNameList,  
                 sql_result_len=sql_result_len,
                 SAP_Nums=SAP_Number_List,
-                MaxLine=MaxLine
+                MaxLine=MaxLine,
+                Version=__Version__
                 )
         else:
-            return render_template('index.html', Part_Type_List=Part_Type_List)
+            return render_template('index.html', Part_Type_List=Part_Type_List, Version=__Version__)
     else:
-        return render_template('index.html', Part_Type_List=Part_Type_List)
+        return render_template('index.html', Part_Type_List=Part_Type_List, Version=__Version__)
 
 
 #函数，功能为读取Windhill的BOM表并去除重复。输入，Excel Sheet, WinChill返回的JSON，Level是指BOM结构上的层级，1为首层
