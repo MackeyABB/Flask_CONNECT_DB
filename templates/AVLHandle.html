@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AVL Automatic Generator</title>
+	<style>
+        table,
+        td,
+        th {
+            /* border: 1px solid black; */
+            border: 1px solid #ddd;
+            font-family: Arial, Helvetica, sans-serif;
+            padding: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: center;
+            background-color: #adacac;
+            color: black;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            /* z-index: 1; */
+        }
+
+        td {
+            text-align: left;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+
+        /* tr:nth-child(even){background-color: #f2f2f2;} */
+    </style>
+</head>
+<body>
+    <h2>This page is used for AVL automatically handling.</h2>
+    <form method="post">
+        <p>
+    <table>
+        <!--表头-->
+        <thead>
+            <tr>
+                <th colspan=2>{{ErrorMessage}}</th>
+
+            </tr>
+        </thead>
+        <!--内容-->
+        <tbody>
+				<tr>
+					<td>Please input your Windchill Account
+                        <br>eg: CNMALAO or email address
+                    </td>
+                    <td><input type="Text" name="user"></td>
+				</tr>
+                <tr>
+					<td>Please input your Windchill Password</td>
+                    <td><input type="password" name="password"></td>
+				</tr>
+                <tr>
+					<td>Please input the PCBA Part Number to generate AVL
+                    <br>(Multiple PCBA Part Numbers separated 
+                    <br>by space, comma, or semicolon or one per line)
+                    </td>
+                    <td><textarea name="PCBA_Part_Number_List" rows="4" cols="50" 
+                    style="width:200px; max-width:500px; resize:vertical; overflow-y:auto;"
+                    placeholder="E.g., 2TFE001045D1801, 2TFE001045D1802">{{ PCBA_Part_Number_List|default('') }}</textarea></td>
+                </tr>
+                <tr>
+                    <td>DB Selection</td>
+                    <td>
+                        <select name="DB_Select">
+                            <option value="0" selected="selected">CONNECT DB</option>
+                            <option value="1">Access DB</option>
+                        </select>
+                    </td>
+                </tr>
+        </tbody>
+    </table>
+        </p>
+        点击按钮后，由于访问WindChill和CONNECT数据库的速度问题，可能将持续几分钟，点击后请勿再次点击此按钮，确认请点击<input type="submit" name="submit">
+
+    </form>
+</body>
+</html>

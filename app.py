@@ -272,7 +272,15 @@ def index(DBType):
     else:
         return render_template('index.html', Part_Type_List=Part_Type_List, Version=__Version__)
 
+# =========== 以下部分为2026/01 之后新的AVL处理代码 ==============
+@app.route("/AVLhandle", methods=['GET','POST'])
+def AVLHandle():
+    if request.method == 'POST':
+        # 处理POST请求
+        pass
+    return render_template('AVLHandle.html')
 
+# =========== 以下部分为Cyrus 生成的AVL BOM相关代码 ==============
 #函数，功能为读取Windhill的BOM表并去除重复。输入，Excel Sheet, WinChill返回的JSON，Level是指BOM结构上的层级，1为首层
 def showBOM(sheet,subpart,level):
     if level > 1:
@@ -326,6 +334,7 @@ def is_json(myjson):
     except ValueError as e:  
         return False  
     return True  
+
 
 #avlindex页面，生成AVL的入口页面
 @app.route("/avlindex", methods=['GET','POST'])
