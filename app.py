@@ -284,6 +284,7 @@ def index(DBType):
 # =========== 以下部分为2026/01 之后新的AVL处理代码 ==============
 @app.route("/AVLhandle", methods=['GET','POST'])
 def AVLHandle():
+    avlHandle_msg = ""
     if request.method == 'POST':
         # 处理POST请求
         # 获取public部分设置
@@ -331,13 +332,20 @@ def AVLHandle():
             return render_template('AVLHandle.html',
                                    user=user,
                                    pwd=pwd,
-                                   PCBA_Part_Number_List=PCBA_Part_Number_List) 
+                                   PCBA_Part_Number_List=PCBA_Part_Number_List,
+                                   Version=__Version__,
+                                   avlHandle_msg=avlHandle_msg) 
         # debug only, to reused the input data
+        avlHandle_msg = "操作完成，当前仅为调试显示输入内容。"
         return render_template('AVLHandle.html',
                                    user=user,
                                    pwd=pwd,
-                                   PCBA_Part_Number_List=PCBA_Part_Number_List) 
-    return render_template('AVLHandle.html')
+                                   PCBA_Part_Number_List=PCBA_Part_Number_List,
+                                   Version=__Version__,
+                                   avlHandle_msg=avlHandle_msg) 
+    return render_template('AVLHandle.html',
+                           Version=__Version__,
+                           avlHandle_msg=avlHandle_msg)
 
 # =========== 以下部分为Cyrus 生成的AVL BOM相关代码 ==============
 #函数，功能为读取Windhill的BOM表并去除重复。输入，Excel Sheet, WinChill返回的JSON，Level是指BOM结构上的层级，1为首层

@@ -46,18 +46,26 @@
 </head>
 
 <body>
+    <!-- 大标题 -->
     <h1>This page is used for AVL automatically handling.</h1>
+    <!-- 显示软件版本信息 -->
+    <div style="position: absolute; top: 10px; right: 30px; color: #888; font-size: 16px;">
+    Version: {{ Version }}
+    </div>
+    <div style="height:30px;color:red">
+         {{ avlHandle_msg }}
+    </div>
+   
     <hr style="border:1px solid #aaa;">
 
     <form method="post" enctype="multipart/form-data">
         <p>
+            <!-- 公共部分参数设置 -->
         <table>
             <h2>Public input setting</h2>
             <!--表头-->
             <thead>
-                <tr>
-                    <th colspan=2>{{ErrorMessage}}</th>
-                </tr>
+
             </thead>
             <!--内容-->
             <tbody>
@@ -65,14 +73,14 @@
                 <tr>
                     <td>Please input your Windchill Account
                     </td>
-                    <td><input type="Text" name="user"></td>
+                    <td><input type="Text" name="user" value="{{ user|default('') }}"></td>
                     <td>
                         eg: CNMALAO or email address
                     </td>
                 </tr>
                 <tr>
                     <td>Please input your Windchill Password</td>
-                    <td><input type="password" name="password"></td>
+                    <td><input type="password" name="password" value="{{ pwd|default('') }}"></td>
                 </tr>
                 <!-- DB选择 -->
                 <tr>
@@ -143,7 +151,8 @@
                     </td>
                     <td>
                         点击按钮后，由于访问WindChill和CONNECT数据库的速度问题，可能将持续几分钟，点击后请勿再次点击此按钮，确认请点击
-                        <br>After pressing the button, due to the speed of accessing WindChill and CONNECT database, it may take several minutes.
+                        <br>After pressing the button, due to the speed of accessing WindChill and CONNECT database, it
+                        may take several minutes.
                         <br>Please do not click this button again after clicking, confirm by
                         clicking
                     </td>
@@ -184,9 +193,11 @@
                         <label for="BOM_Related_Sheet">BOM Related Sheet</label>
                     </td>
                     <td>
-                        Please select to compare only the AVL sheet or all BOM related sheets, default is "AVL sheet only".
+                        Please select to compare only the AVL sheet or all BOM related sheets, default is "AVL sheet
+                        only".
                         <br><b>AVL Sheet Only</b>: only check the ordering information in the "AVL" sheet.
-                        <br><b>BOM Related Sheet</b>: from the "BOM Related" sheet, find all parts used in the BOM, then combine to a new AVL list, finally compare with the data in the "AVL" sheet.
+                        <br><b>BOM Related Sheet</b>: from the "BOM Related" sheet, find all parts used in the BOM, then
+                        combine to a new AVL list, finally compare with the data in the "AVL" sheet.
                     </td>
                 </tr>
                 <!-- 操作按键 -->
@@ -200,7 +211,8 @@
                     </td>
                     <td>
                         点击按钮后，由于访问WindChill和CONNECT数据库的速度问题，可能将持续几分钟，点击后请勿再次点击此按钮，确认请点击
-                        <br>After pressing the button, due to the speed of accessing WindChill and CONNECT database, it may take several minutes.
+                        <br>After pressing the button, due to the speed of accessing WindChill and CONNECT database, it
+                        may take several minutes.
                         <br>Please do not click this button again after clicking, confirm by
                         clicking
                     </td>
