@@ -44,6 +44,8 @@ import base64
 import json  
 import logging
 import datetime
+from werkzeug.utils import secure_filename
+import os
   
 app = Flask(__name__)  
 import openpyxl
@@ -282,6 +284,14 @@ def AVLHandle():
         PCBA_Part_Number_List = request.form['PCBA_Part_Number_List']
         DB_Select = request.form['DB_Select']
         print(user, pwd, PCBA_Part_Number_List, DB_Select)
+        excel_file = request.files.get('excel_file')
+        upload_folder = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'UploadFiles')
+        os.makedirs(upload_folder, exist_ok=True)  # 自动创建目录（如果不存在）
+        if excel_file:
+            # 保存或直接处理excel_file
+            filename = secure_filename(excel_file.filename)
+            excel_file.save(os.path.join(upload_folder, filename))
+            # 或用 openpyxl 直接读取内容
         pass
     return render_template('AVLHandle.html')
 

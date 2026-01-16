@@ -45,14 +45,13 @@
 </head>
 <body>
     <h2>This page is used for AVL automatically handling.</h2>
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
         <p>
     <table>
         <!--表头-->
         <thead>
             <tr>
                 <th colspan=2>{{ErrorMessage}}</th>
-
             </tr>
         </thead>
         <!--内容-->
@@ -98,7 +97,42 @@
     </table>
         </p>
         点击按钮后，由于访问WindChill和CONNECT数据库的速度问题，可能将持续几分钟，点击后请勿再次点击此按钮，确认请点击<input type="submit" name="submit">
-
+    
+    <table>
+        <!-- AVL 对比 -->
+        <!--表头-->
+        <h2>AVL Comparision</h2>
+        <thead>
+            <tr>
+                <th colspan=2>{{ResultMessage}}</th>
+            </tr>
+        </thead>
+        <!--内容-->
+        <tbody>
+            <tr>
+                <td>Please select the AVL Excel file for comparison:</td>
+                <td>
+                    <input type="file" name="excel_file" accept=".xls,.xlsx">
+                </td>
+                <td>
+                    (Only .xls or .xlsx files are accepted)
+                </td>
+            </tr>
+            {% if AVLResult %}
+                {% for row in AVLResult %}
+                    <tr>
+                        {% for item in row %}
+                            <td>{{ item }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="2">No data to display.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
     </form>
 </body>
 </html>
