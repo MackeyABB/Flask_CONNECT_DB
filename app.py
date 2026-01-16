@@ -1,4 +1,3 @@
-
 '''
 LastEditors: Mackey
 LastEditTime: 2024-04-29 15:30:00
@@ -51,6 +50,14 @@ app = Flask(__name__)
 import openpyxl
 import tempfile
 import os
+
+
+# debug print, print到控制台
+DEBUG_PRINT = True
+
+def debug_print(*args, **kwargs):
+    if DEBUG_PRINT:
+        print(*args, **kwargs)
 
 # production logging
 # from logging.config import dictConfig
@@ -279,20 +286,57 @@ def index(DBType):
 def AVLHandle():
     if request.method == 'POST':
         # 处理POST请求
+        # 获取public部分设置
         user = request.form['user']
         pwd = request.form['password']
-        PCBA_Part_Number_List = request.form['PCBA_Part_Number_List']
         DB_Select = request.form['DB_Select']
-        print(user, pwd, PCBA_Part_Number_List, DB_Select)
+        AVL_include = request.form.get("AVL_include")
+        # 获取First AVL Generation部分设置
+        PCBA_Part_Number_List = request.form['PCBA_Part_Number_List']
+        btn = request.form['btn']
+        # 获取AVL Comparison部分设置
+        AVL_Cmp_range = request.form.get("AVL_Cmp_range")
         excel_file = request.files.get('excel_file')
-        upload_folder = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'UploadFiles')
-        os.makedirs(upload_folder, exist_ok=True)  # 自动创建目录（如果不存在）
-        if excel_file:
-            # 保存或直接处理excel_file
-            filename = secure_filename(excel_file.filename)
-            excel_file.save(os.path.join(upload_folder, filename))
-            # 或用 openpyxl 直接读取内容
-        pass
+
+        # debug print
+        debug_print("user:", user)
+        debug_print("pwd:", pwd)
+        debug_print("DB_Select:", DB_Select)
+        debug_print("AVL_include:", AVL_include)
+        debug_print("PCBA_Part_Number_List:", PCBA_Part_Number_List)
+        debug_print("btn:", btn)
+        debug_print("AVL_Cmp_range:", AVL_Cmp_range)
+
+        if btn == 'Create_AVL':
+            # 处理Create AVL按钮点击事件
+            pass
+        elif btn == 'Download_AVL':
+            # 处理Download AVL按钮点击事件
+            pass
+        elif btn == 'Compare_AVL':
+            # 处理Compare AVL按钮点击事件
+            pass
+            upload_folder = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'UploadFiles')
+            os.makedirs(upload_folder, exist_ok=True)  # 自动创建目录（如果不存在）
+            if excel_file:
+                # 保存或直接处理excel_file
+                filename = secure_filename(excel_file.filename)
+                excel_file.save(os.path.join(upload_folder, filename))
+                # 或用 openpyxl 直接读取内容            
+        elif btn == 'Download_Result':
+            # 处理Download Result按钮点击事件
+            pass
+        else:
+            flash("未知的操作按钮！")
+            return render_template('AVLHandle.html',
+                                   user=user,
+                                   pwd=pwd,
+                                   PCBA_Part_Number_List=PCBA_Part_Number_List) 
+        # debug only, to reused the input data
+        return render_template('AVLHandle.html',
+                                   user=user,
+                                   pwd=pwd,
+                                   PCBA_Part_Number_List=PCBA_Part_Number_List) 
     return render_template('AVLHandle.html')
 
 # =========== 以下部分为Cyrus 生成的AVL BOM相关代码 ==============
@@ -463,9 +507,8 @@ def downloadexcel(AVL):
 
 if __name__ == '__main__':  
     app.run(host="0.0.0.0", debug = True)
-    
-    
 
 
 
-    
+
+
