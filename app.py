@@ -284,7 +284,10 @@ def index(DBType):
 # =========== 以下部分为2026/01 之后新的AVL处理代码 ==============
 @app.route("/AVLhandle", methods=['GET','POST'])
 def AVLHandle():
-    avlHandle_msg = ""
+    # 网页运行信息
+    msg_avlHandle = ""
+    # 按键使能状态
+    btn_enabled = True
     if request.method == 'POST':
         # 处理POST请求
         # 获取public部分设置
@@ -307,6 +310,12 @@ def AVLHandle():
         debug_print("PCBA_Part_Number_List:", PCBA_Part_Number_List)
         debug_print("btn:", btn)
         debug_print("AVL_Cmp_range:", AVL_Cmp_range)
+        debug_print("excel_file:", excel_file)
+
+        # disable all buttons during processing
+        btn_enabled = False  
+        msg_avlHandle = "正在处理，请稍候..."
+        # 好像没有办法更新页面的上述信息， 需要使用AJAX才行，暂时未处理
 
         if btn == 'Create_AVL':
             # 处理Create AVL按钮点击事件
@@ -334,18 +343,24 @@ def AVLHandle():
                                    pwd=pwd,
                                    PCBA_Part_Number_List=PCBA_Part_Number_List,
                                    Version=__Version__,
-                                   avlHandle_msg=avlHandle_msg) 
+                                   msg_avlHandle=msg_avlHandle,
+                                   btn_enabled=btn_enabled)
+
         # debug only, to reused the input data
-        avlHandle_msg = "操作完成，当前仅为调试显示输入内容。"
+        msg_avlHandle = "操作完成，当前仅为调试显示输入内容。"
         return render_template('AVLHandle.html',
-                                   user=user,
-                                   pwd=pwd,
-                                   PCBA_Part_Number_List=PCBA_Part_Number_List,
-                                   Version=__Version__,
-                                   avlHandle_msg=avlHandle_msg) 
+                               user=user,
+                               pwd=pwd,
+                               PCBA_Part_Number_List=PCBA_Part_Number_List,
+                               Version=__Version__,
+                               msg_avlHandle=msg_avlHandle,
+                               btn_enabled=btn_enabled)
+        # enable buttons after processing
+        btn_enabled = True
     return render_template('AVLHandle.html',
                            Version=__Version__,
-                           avlHandle_msg=avlHandle_msg)
+                           msg_avlHandle=msg_avlHandle,
+                           btn_enabled=btn_enabled)
 
 # =========== 以下部分为Cyrus 生成的AVL BOM相关代码 ==============
 #函数，功能为读取Windhill的BOM表并去除重复。输入，Excel Sheet, WinChill返回的JSON，Level是指BOM结构上的层级，1为首层

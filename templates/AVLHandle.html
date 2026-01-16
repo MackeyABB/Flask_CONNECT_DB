@@ -53,7 +53,7 @@
     Version: {{ Version }}
     </div>
     <div style="height:30px;color:red">
-         {{ avlHandle_msg }}
+         {{ msg_avlHandle }}
     </div>
    
     <hr style="border:1px solid #aaa;">
@@ -146,8 +146,8 @@
 
                     </td>
                     <td>
-                        <input type="submit" name="btn" value="Create_AVL">
-                        <input type="submit" name="btn" value="Download_AVL">
+                        <input type="submit" name="btn" value="Create_AVL" {% if not btn_enabled %}disabled{% endif %}>
+                        <input type="submit" name="btn" value="Download_AVL" {% if not btn_enabled %}disabled{% endif %}>
                     </td>
                     <td>
                         点击按钮后，由于访问WindChill和CONNECT数据库的速度问题，可能将持续几分钟，点击后请勿再次点击此按钮，确认请点击
@@ -206,8 +206,8 @@
 
                     </td>
                     <td>
-                        <input type="submit" name="btn" value="Compare_AVL">
-                        <input type="submit" name="btn" value="Download_Result">
+                        <input type="submit" name="btn" value="Compare_AVL" {% if not btn_enabled %}disabled{% endif %}>
+                        <input type="submit" name="btn" value="Download_Result" {% if not btn_enabled %}disabled{% endif %}>
                     </td>
                     <td>
                         点击按钮后，由于访问WindChill和CONNECT数据库的速度问题，可能将持续几分钟，点击后请勿再次点击此按钮，确认请点击
