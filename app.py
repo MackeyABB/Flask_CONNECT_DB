@@ -45,6 +45,7 @@ import logging
 import datetime
 from werkzeug.utils import secure_filename
 import os
+import third_party.PLM_Handle.PLM_Basic_Auth_ByPass_MFA_Get_BOM as plm
   
 app = Flask(__name__)  
 import openpyxl
@@ -319,7 +320,40 @@ def AVLHandle():
 
         if btn == 'Create_AVL':
             # 处理Create AVL按钮点击事件
-            pass
+            # 处理 PCBA_Part_Number_List，获取list格式
+            PCBA_Part_Number_List = re.split(r'[\s,;]+', PCBA_Part_Number_List.strip())
+            # 处理AVL_include选项
+            bCHINA_PN_ONLY = True if AVL_include == '2TFU CN only' else False
+            # 变量定义
+            Multi_BOM_Info_list = []
+            Multi_BOM_SAP_Number_List = []
+            Multi_BOM_SAP_Number_List_Str = ""
+            Multi_PCBA_Part_info_list = []
+            for BOM_number in PCBA_Part_Number_List:
+                BOM_Info_list, BOM_SAP_Number_List, BOM_SAP_Number_List_Str, PCBA_Part_info_list = plm.get_BOM(user, pwd, BOM_number, bCHINA_PN_ONLY)
+                Multi_BOM_Info_list += BOM_Info_list
+                Multi_BOM_SAP_Number_List += BOM_SAP_Number_List
+                Multi_BOM_SAP_Number_List_Str += BOM_SAP_Number_List_Str
+                Multi_PCBA_Part_info_list += PCBA_Part_info_list
+            
+            # debug print before deduplication
+            debug_print("Before deduplication:")
+            debug_print("Multi_BOM_Info_list:",  len(Multi_BOM_Info_list))
+            debug_print("Multi_BOM_SAP_Number_List:", len(Multi_BOM_SAP_Number_List))
+            debug_print("Multi_BOM_SAP_Number_List_Str:", len(Multi_BOM_SAP_Number_List_Str))
+            debug_print("Multi_PCBA_Part_info_list:", len(Multi_PCBA_Part_info_list))
+            # 去除重复项
+            Multi_BOM_SAP_Number_List = list(set(Multi_BOM_SAP_Number_List))
+            Multi_BOM_Info_list = list(set(Multi_BOM_Info_list))
+            # Multi_BOM_SAP_Number_List_Str = list(set(Multi_BOM_SAP_Number_List_Str))
+            # Multi_PCBA_Part_info_list = list(set(Multi_PCBA_Part_info_list))
+            # debug print after deduplication
+            debug_print("After deduplication:")
+            debug_print("Multi_BOM_Info_list:",  len(Multi_BOM_Info_list))
+            debug_print("Multi_BOM_SAP_Number_List:", len(Multi_BOM_SAP_Number_List))
+            debug_print("Multi_BOM_SAP_Number_List_Str:", len(Multi_BOM_SAP_Number_List_Str))
+            debug_print("Multi_PCBA_Part_info_list:", len(Multi_PCBA_Part_info_list))
+            msg_avlHandle = "Create AVL 操作完成，当前仅为调试显示输入内容。"
         elif btn == 'Download_AVL':
             # 处理Download AVL按钮点击事件
             pass
