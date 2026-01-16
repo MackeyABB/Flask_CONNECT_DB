@@ -277,6 +277,11 @@ def index(DBType):
 def AVLHandle():
     if request.method == 'POST':
         # 处理POST请求
+        user = request.form['user']
+        pwd = request.form['password']
+        PCBA_Part_Number_List = request.form['PCBA_Part_Number_List']
+        DB_Select = request.form['DB_Select']
+        print(user, pwd, PCBA_Part_Number_List, DB_Select)
         pass
     return render_template('AVLHandle.html')
 

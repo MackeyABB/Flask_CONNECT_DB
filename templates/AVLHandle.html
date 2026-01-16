@@ -59,9 +59,11 @@
         <tbody>
 				<tr>
 					<td>Please input your Windchill Account
-                        <br>eg: CNMALAO or email address
                     </td>
                     <td><input type="Text" name="user"></td>
+                    <td>
+                        eg: CNMALAO or email address
+                    </td>
 				</tr>
                 <tr>
 					<td>Please input your Windchill Password</td>
@@ -69,20 +71,27 @@
 				</tr>
                 <tr>
 					<td>Please input the PCBA Part Number to generate AVL
-                    <br>(Multiple PCBA Part Numbers separated 
-                    <br>by space, comma, or semicolon or one per line)
                     </td>
                     <td><textarea name="PCBA_Part_Number_List" rows="4" cols="50" 
                     style="width:200px; max-width:500px; resize:vertical; overflow-y:auto;"
                     placeholder="E.g., 2TFE001045D1801, 2TFE001045D1802">{{ PCBA_Part_Number_List|default('') }}</textarea></td>
+                    <td>
+                    (Multiple PCBA Part Numbers separated 
+                    <br>by space, comma, or semicolon or one per line)
+                    </td>
                 </tr>
                 <tr>
-                    <td>DB Selection</td>
+                    <td>DB Selection
+                    </td>
                     <td>
                         <select name="DB_Select">
-                            <option value="0" selected="selected">CONNECT DB</option>
-                            <option value="1">Access DB</option>
+                            <option value="0" >CONNECT DB</option>
+                            <option value="1" selected="selected">Access DB</option>
                         </select>
+                    </td>
+                    <td>
+                    CONNECT DB: Data in Europe Server(Cadence, slow but latest)
+                    <br>Access DB: Data in China Server(AD, fast but may be not latest)
                     </td>
                 </tr>
         </tbody>
