@@ -291,13 +291,13 @@ def AVLHandle():
     if request.method == 'POST':
         # 处理POST请求
         # 获取public部分设置
-        user = request.form['user']
-        pwd = request.form['password']
-        DB_Select = request.form['DB_Select']
+        user = request.form.get('user')
+        pwd = request.form.get('password')
+        DB_Select = request.form.get('DB_Select')
         AVL_include = request.form.get("AVL_include")
         # 获取First AVL Generation部分设置
-        PCBA_Part_Number_List = request.form['PCBA_Part_Number_List']
-        btn = request.form['btn']
+        PCBA_Part_Number_List = request.form.get('PCBA_Part_Number_List')
+        btn = request.form.get('btn')
         # 获取AVL Comparison部分设置
         AVL_Cmp_range = request.form.get("AVL_Cmp_range")
         excel_file = request.files.get('excel_file')
@@ -348,15 +348,19 @@ def AVLHandle():
 
         # debug only, to reused the input data
         msg_avlHandle = "操作完成，当前仅为调试显示输入内容。"
-        return render_template('AVLHandle.html',
-                               user=user,
-                               pwd=pwd,
-                               PCBA_Part_Number_List=PCBA_Part_Number_List,
-                               Version=__Version__,
-                               msg_avlHandle=msg_avlHandle,
-                               btn_enabled=btn_enabled)
+        # return render_template('AVLHandle.html',
+        #                        user=user,
+        #                        pwd=pwd,
+        #                        PCBA_Part_Number_List=PCBA_Part_Number_List,
+        #                        Version=__Version__,
+        #                        msg_avlHandle=msg_avlHandle,
+        #                        btn_enabled=btn_enabled)
         # enable buttons after processing
         btn_enabled = True
+        # JavaScript方式刷新页面
+        return jsonify({'status': 'completed',
+                         'msg': msg_avlHandle,
+                         'btn_enabled': btn_enabled})
     return render_template('AVLHandle.html',
                            Version=__Version__,
                            msg_avlHandle=msg_avlHandle,

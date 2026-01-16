@@ -50,12 +50,12 @@
     <h1>This page is used for AVL automatically handling.</h1>
     <!-- 显示软件版本信息 -->
     <div style="position: absolute; top: 10px; right: 30px; color: #888; font-size: 16px;">
-    Version: {{ Version }}
+        Version: {{ Version }}
     </div>
-    <div style="height:30px;color:red">
-         {{ msg_avlHandle }}
+    <div id="msg_avlHandle" style="height:30px;color:red">
+        {{ msg_avlHandle }}
     </div>
-   
+
     <hr style="border:1px solid #aaa;">
 
     <form method="post" enctype="multipart/form-data">
@@ -146,8 +146,10 @@
 
                     </td>
                     <td>
-                        <input type="submit" name="btn" value="Create_AVL" {% if not btn_enabled %}disabled{% endif %}>
-                        <input type="submit" name="btn" value="Download_AVL" {% if not btn_enabled %}disabled{% endif %}>
+                        <input type="submit" name="btn" value="Create_AVL" onclick="handleBtn(event);" {% if not
+                            btn_enabled %}disabled{% endif %}>
+                        <input type="submit" name="btn" value="Download_AVL" onclick="handleBtn(event);" {% if not
+                            btn_enabled %}disabled{% endif %}>
                     </td>
                     <td>
                         点击按钮后，由于访问WindChill和CONNECT数据库的速度问题，可能将持续几分钟，点击后请勿再次点击此按钮，确认请点击
@@ -206,8 +208,10 @@
 
                     </td>
                     <td>
-                        <input type="submit" name="btn" value="Compare_AVL" {% if not btn_enabled %}disabled{% endif %}>
-                        <input type="submit" name="btn" value="Download_Result" {% if not btn_enabled %}disabled{% endif %}>
+                        <input type="submit" name="btn" value="Compare_AVL" onclick="handleBtn(event);" {% if not
+                            btn_enabled %}disabled{% endif %}>
+                        <input type="submit" name="btn" value="Download_Result" onclick="handleBtn(event);" {% if not
+                            btn_enabled %}disabled{% endif %}>
                     </td>
                     <td>
                         点击按钮后，由于访问WindChill和CONNECT数据库的速度问题，可能将持续几分钟，点击后请勿再次点击此按钮，确认请点击
@@ -235,6 +239,51 @@
             </tbody>
         </table>
     </form>
+
+    <!-- AJAX处理 -->
+    <script>
+        // 表单按键处理函数
+        function handleBtn(event) {
+            event.preventDefault(); // 阻止表单默认提交
+
+            // 1. 先更新页面信息
+            document.getElementById('msg_avlHandle').innerText = "正在处理，请稍候...";
+            // disable单个按钮
+            // document.querySelector('input[name="btn"][value="Create_AVL"]').disabled = true;
+            // disable所有按钮
+            document.querySelectorAll('input[name="btn"]').forEach(function (btn) {
+                btn.disabled = true;
+            });
+
+            // 2. 用AJAX提交表单数据
+            var formData = new FormData(document.querySelector('form'));
+            // 获取当前点击的按钮并添加到表单数据中
+            var btn = event.target;
+            if (btn.name && btn.value) {
+                formData.append(btn.name, btn.value);
+            }
+            // 调试输出表单数据， 浏览器中可以通过控制台查看：Array.from(formData.entries())
+            for (var pair of formData.entries()) {
+                console.log(pair[0] + ': ' + pair[1]);
+            }
+            // 发送AJAX请求，触发Flask后端处理, 模拟按下按钮
+            fetch('/AVLhandle', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // 处理返回的结果
+                    document.getElementById('msg_avlHandle').innerText = data.msg;
+                    // enable单个按钮
+                    // document.querySelector('input[name="btn"][value="Create_AVL"]').disabled = false;
+                    // Enable所有按钮
+                    document.querySelectorAll('input[name="btn"]').forEach(function (btn) {
+                        btn.disabled = false;
+                    });
+                });
+        }
+    </script>
 </body>
 
 </html>
