@@ -46,6 +46,7 @@ import datetime
 from werkzeug.utils import secure_filename
 import os
 import third_party.PLM_Handle.PLM_Basic_Auth_ByPass_MFA_Get_BOM as plm
+import third_party.Excel_Handle.AVL_Excel_Handle as excel_handle
   
 app = Flask(__name__)  
 import openpyxl
@@ -353,7 +354,42 @@ def AVLHandle():
             debug_print("Multi_BOM_SAP_Number_List:", len(Multi_BOM_SAP_Number_List))
             debug_print("Multi_BOM_SAP_Number_List_Str:", len(Multi_BOM_SAP_Number_List_Str))
             debug_print("Multi_PCBA_Part_info_list:", len(Multi_PCBA_Part_info_list))
-            msg_avlHandle = "Create AVL 操作完成，当前仅为调试显示输入内容。"
+
+            # 通过SQL获取ordering information
+            sql_result = []
+            tableName = '---All----' #检索所有表
+            dbindex = int(DB_Select)    #0: CONNECT DB, 1: Access DB
+            # 打开DB
+            bIsDBOpen = db.openDB(dbindex, db_mgt.DBList, app)
+            if bIsDBOpen == True:
+                flash(db_mgt.DBList[dbindex]+" 打开数据库成功！")
+            else:
+                flash(db_mgt.DBList[dbindex]+" 打开数据库出错")
+
+             # 遍历所有SAP编号，逐个查询
+            for SAPNo_Searchby in Multi_BOM_SAP_Number_List:
+                sql_result_each, columnNameList = db.fetch(
+                    tableName=tableName, 
+                    dbindex=dbindex, 
+                    PartNo_Searchby='',
+                    SAPNo_Searchby=SAPNo_Searchby,
+                    PartValue_Searchby='',
+                    MfcPartNum_Searchby='',
+                    Description_Searchby='',
+                    TechDescription_Searchby='',
+                    Editor_Searchby=''
+                    )
+                sql_result.append(sql_result_each[0])
+            sql_result_len = len(sql_result)
+            # 保存Excel文件， 使用模板2TFP900033A1076.xlsx
+            template_file = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),  '2TFP900033A1076.xlsx')
+            output_file = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', f"AVL_Result_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
+            wb = openpyxl.load_workbook(template_file)
+            excel_handle.first_write_AVL_to_excel(template_file, sql_result, output_file)
+
+            
+
+            msg_avlHandle = "Create AVL 操作完成，若没有弹出保存对话框保存Excel文件，请点击Download_AVL按钮。"
         elif btn == 'Download_AVL':
             # 处理Download AVL按钮点击事件
             pass
