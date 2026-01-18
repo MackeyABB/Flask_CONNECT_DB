@@ -24,6 +24,7 @@ Revision History:
         a) 网站打开首页增加跳转到AVL处理页面的按钮, 并添加版本号显示
         b) 新增AVL处理页面,支持Create AVL和Download AVL功能,使用AJAX方式处理请求和下载文件
         c) AVL处理页面中的AVL inlcude选项支持“2TFU CN only”和“All”,默认为“2TFU CN only”, 但All选项还存在问题,需要后续修正
+3.1.0 - 20260118: AVL页面添加跳转回主页面的按钮
 '''
 
 # 版本号
@@ -31,7 +32,7 @@ Revision History:
 # xx: 大版本,架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.0.0"
+__Version__ = "3.1.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
