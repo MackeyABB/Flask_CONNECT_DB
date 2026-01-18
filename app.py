@@ -290,6 +290,7 @@ def AVLHandle():
     msg_avlHandle = ""
     # 按键使能状态
     btn_enabled = True
+    # 处理POST请求, 即点击按钮之后，判断按键类型并处理
     if request.method == 'POST':
         # 处理POST请求
         # 获取public部分设置
@@ -314,13 +315,16 @@ def AVLHandle():
         debug_print("AVL_Cmp_range:", AVL_Cmp_range)
         debug_print("excel_file:", excel_file)
 
+        # 以下代码用于处理按钮点击后，界面显示和按钮使能状态，已经在页面的JavaScript中实现，这里注释掉
         # disable all buttons during processing
-        btn_enabled = False  
-        msg_avlHandle = "正在处理，请稍候..."
-        # 好像没有办法更新页面的上述信息， 需要使用AJAX才行，暂时未处理
-
+        # btn_enabled = False  
+        # msg_avlHandle = "正在处理，请稍候..."
+        
+        # 处理Create AVL按钮点击事件
         if btn == 'Create_AVL':
-            # 处理Create AVL按钮点击事件
+            debug_print("="*30)
+            debug_print("Create_AVL button clicked. Start processing...")
+            # step1: 准备工作，处理输入参数
             # 处理 PCBA_Part_Number_List，获取list格式
             PCBA_Part_Number_List = re.split(r'[\s,;]+', PCBA_Part_Number_List.strip())
             # 处理AVL_include选项
@@ -330,33 +334,20 @@ def AVLHandle():
             Multi_BOM_SAP_Number_List = []  # SAP Number list in the BOM
             Multi_BOM_SAP_Number_List_Str = ""  # SAP Number list in the BOM, str format
             Multi_PCBA_Part_info_list = []  # PCBA Part info list
-            # 连接PLM，获取BOM信息
+            # Step2: 连接PLM，获取BOM信息
+            debug_print("Starting to get BOM from PLM...")
             for BOM_number in PCBA_Part_Number_List:
+                print("Processing PCBA Part Number:", BOM_number)
                 BOM_Info_list, BOM_SAP_Number_List, BOM_SAP_Number_List_Str, PCBA_Part_info_list = plm.get_BOM(user, pwd, BOM_number, bCHINA_PN_ONLY)
                 Multi_BOM_Info_list += BOM_Info_list
                 Multi_BOM_SAP_Number_List += BOM_SAP_Number_List
                 Multi_BOM_SAP_Number_List_Str += BOM_SAP_Number_List_Str
                 Multi_PCBA_Part_info_list.append(PCBA_Part_info_list)
-            
-            # debug print before deduplication
-            debug_print("Before deduplication:")
-            debug_print("Multi_BOM_Info_list:",  len(Multi_BOM_Info_list))
-            debug_print("Multi_BOM_SAP_Number_List:", len(Multi_BOM_SAP_Number_List))
-            debug_print("Multi_BOM_SAP_Number_List_Str:", len(Multi_BOM_SAP_Number_List_Str))
-            debug_print("Multi_PCBA_Part_info_list:", len(Multi_PCBA_Part_info_list))
             # 去除重复项
             Multi_BOM_SAP_Number_List = list(set(Multi_BOM_SAP_Number_List))
             Multi_BOM_Info_list = list(set(Multi_BOM_Info_list))
-            # Multi_BOM_SAP_Number_List_Str = list(set(Multi_BOM_SAP_Number_List_Str))
-            # Multi_PCBA_Part_info_list = list(set(Multi_PCBA_Part_info_list))
-            # debug print after deduplication
-            debug_print("After deduplication:")
-            debug_print("Multi_BOM_Info_list:",  len(Multi_BOM_Info_list))
-            debug_print("Multi_BOM_SAP_Number_List:", len(Multi_BOM_SAP_Number_List))
-            debug_print("Multi_BOM_SAP_Number_List_Str:", len(Multi_BOM_SAP_Number_List_Str))
-            debug_print("Multi_PCBA_Part_info_list:", len(Multi_PCBA_Part_info_list))
-
-            # 通过SQL获取ordering information
+            # Step3: 通过SQL获取ordering information
+            debug_print("Starting to get ordering info from DB...")
             sql_result = []
             tableName = '---All----' #检索所有表
             dbindex = int(DB_Select)    #0: CONNECT DB, 1: Access DB
@@ -366,8 +357,7 @@ def AVLHandle():
                 flash(db_mgt.DBList[dbindex]+" 打开数据库成功！")
             else:
                 flash(db_mgt.DBList[dbindex]+" 打开数据库出错")
-
-             # 遍历所有SAP编号，逐个查询
+             # 遍历所有SAP编号，逐个查询, 获取结果
             for SAPNo_Searchby in Multi_BOM_SAP_Number_List:
                 sql_result_each, columnNameList = db.fetch(
                     tableName=tableName, 
@@ -382,29 +372,44 @@ def AVLHandle():
                     )
                 sql_result.append(sql_result_each[0])
             sql_result_len = len(sql_result)
-            # 保存Excel文件， 使用模板2TFP900033A1076.xlsx
+            # Step4: 保存Excel文件， 使用模板2TFP900033A1076.xlsx
+            debug_print("Starting to write AVL Excel file...")
+            # Excel模板路径
             template_file = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),  '2TFP900033A1076.xlsx')
+            # 输出文件路径
             output_file = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', f"AVL_Result_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
+            # 调用Excel处理模块，生成AVL Excel文件, 结果直接输出到output_file
             excel_handle.first_write_AVL_to_excel(template_file, sql_result, Multi_PCBA_Part_info_list, output_file)
-            msg_avlHandle = "Create AVL 操作完成，若没有弹出保存对话框保存Excel文件，请点击Download_AVL按钮。"
+            # Step5: 完成操作，返回结果信息
+            debug_print("AVL Excel file created successfully.")
+            msg_avlHandle = "Create AVL button processing completed. If the save dialog did not pop up, please click the Download_AVL button."
+        # 处理Download AVL按钮点击事件
         elif btn == 'Download_AVL':
-            # 处理Download AVL按钮点击事件
-            pass
+            debug_print("="*30)
+            debug_print("Download_AVL button clicked. Start processing...")
+
+            debug_print("Download AVL successfully.")
+            msg_avlHandle = "Download_AVL button processing completed."
+        # 处理Compare AVL按钮点击事件
         elif btn == 'Compare_AVL':
-            # 处理Compare AVL按钮点击事件
-            pass
-            upload_folder = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'UploadFiles')
-            os.makedirs(upload_folder, exist_ok=True)  # 自动创建目录（如果不存在）
-            if excel_file:
-                # 保存或直接处理excel_file
-                filename = secure_filename(excel_file.filename)
-                excel_file.save(os.path.join(upload_folder, filename))
-                # 或用 openpyxl 直接读取内容            
+            debug_print("="*30)
+            debug_print("Compare_AVL button clicked. Start processing...")
+
+            debug_print("Compare AVL successfully.")
+            msg_avlHandle = "Create AVL button processing completed. If the save dialog did not pop up, please click the Download_Result button."
+        # 处理Download Result按钮点击事件
         elif btn == 'Download_Result':
-            # 处理Download Result按钮点击事件
-            pass
+            debug_print("="*30)
+            debug_print("Download_Result button clicked. Start processing...")
+
+            debug_print("Download Result successfully.")
+            msg_avlHandle = "Download_Result button processing completed."
+        # 处理未知按钮点击事件
         else:
+            debug_print("="*30)
+            debug_print("Unknown button clicked. Start processing...")
             flash("未知的操作按钮！")
+            # 若出现此情况，直接返回页面
             return render_template('AVLHandle.html',
                                    user=user,
                                    pwd=pwd,
