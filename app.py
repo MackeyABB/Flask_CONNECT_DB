@@ -284,7 +284,7 @@ def index(DBType):
         return render_template('index.html', Part_Type_List=Part_Type_List, Version=__Version__)
 
 # =========== 以下部分为2026/01 之后新的AVL处理代码 ==============
-def download_excel(output_excel_file):
+def download_excel(output_excel_file, AJAX=False, msg_avlHandle="", btn_enabled=True):
     """ 弹窗下载AVL Excel文件。
     Args:
         param output_excel_file (str): 输出Excel文件路径
@@ -292,9 +292,24 @@ def download_excel(output_excel_file):
         output_excel_file (str): 输出Excel文件路径
     """
     # 这里可以添加下载文件的逻辑
-    response_file = send_file(output_excel_file, as_attachment=True)
-    return response_file
+    if AJAX:
+        # 生成Excel后
+        download_url = url_for('downloadExcelFile', filename=os.path.basename(output_excel_file))
+        return jsonify({'status': 'completed', 
+                        'msg': msg_avlHandle, 
+                        'btn_enabled': btn_enabled, 
+                        'download_url': download_url
+                        })
+    else:
+        response_file = send_file(output_excel_file, as_attachment=True)
+        return response_file
 
+
+# 通过URL跳转的方式下载Excel文件
+@app.route('/downloadExcelFile/<filename>')
+def downloadExcelFile(filename):
+    filePathName = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', filename)
+    return send_file(filePathName, as_attachment=True)
 
 @app.route("/AVLhandle", methods=['GET','POST'])
 def AVLHandle():
@@ -396,8 +411,9 @@ def AVLHandle():
             debug_print("AVL Excel file created successfully.")
             # Step6: 提供下载
             msg_avlHandle = "Create AVL button processing completed. If the save dialog did not pop up, please click the Download_AVL button."
-            download_excel(output_file)
-            
+            # AJAX方式下载文件
+            return download_excel(output_file, AJAX=True, msg_avlHandle=msg_avlHandle, btn_enabled=True)
+
         # 处理Download AVL按钮点击事件
         elif btn == 'Download_AVL':
             debug_print("="*30)
@@ -451,6 +467,9 @@ def AVLHandle():
                            Version=__Version__,
                            msg_avlHandle=msg_avlHandle,
                            btn_enabled=btn_enabled)
+
+
+
 
 # =========== 以下部分为Cyrus 生成的AVL BOM相关代码 ==============
 #函数，功能为读取Windhill的BOM表并去除重复。输入，Excel Sheet, WinChill返回的JSON，Level是指BOM结构上的层级，1为首层
@@ -609,7 +628,7 @@ def exportavl():
 
 #超链接，用于下载相应的Excel文件
 @app.route('/downloadexcel/<AVL>')  
-def downloadexcel(AVL):  
+def downloadFile(AVL):  
     # 返回修改后的Excel文件供下载  
     modified_file = open("out/modified_example.xlsx", "rb")  
     

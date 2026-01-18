@@ -281,6 +281,20 @@
                     document.querySelectorAll('input[name="btn"]').forEach(function (btn) {
                         btn.disabled = false;
                     });
+                    // 如果有下载链接，自动触发下载，通过跳转到另一链接的方式实现
+                    // 触发Flask后端的下载路由/downloadExcelFile/<filename>
+                    if (data.download_url) {
+                        // 推荐方式1：window.open
+                        // window.open(data.download_url, '_blank');
+
+                        // 推荐方式2：自动创建a标签并点击（更兼容）
+                        let a = document.createElement('a');
+                        a.href = data.download_url;
+                        a.download = '';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    }
                 });
         }
     </script>
