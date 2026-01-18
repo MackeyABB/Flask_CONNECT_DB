@@ -6,28 +6,32 @@ Introduction:
     即制作网页版的CONNECT DB显示程序
 
 Revision History:
-1.0.0 - 20240422: 初始版本，实现CONNECT DB的网页端查询和Excel保存功能
-1.0.1 - 20240429: 修正了Excel保存功能的bug，之前保存的Excel文件无法打开
-1.1.0 - 20240506: 增加了对Access DB的支持，可以选择CONNECT DB和Access DB进行查询
-1.1.1 - 20240510: 修正了Access DB查询时的bug，之前查询结果不正确
-1.2.0 - 20240515: 优化了网页界面，增加了查询条件的输入框
-1.2.1 - 20240520: 修正了网页界面的一些显示问题，提升用户体验
-1.3.0 - 20240525: 增加了对AVL BOM导出的支持，可以从Windchill获取BOM并生成Excel文件, by Cyrus
-2.0.0 - 20260108: 重构代码结构，db_mgt.py使用PyPika进行SQL语句生成，提升代码可维护性和扩展性
+1.0.0 - 20240422: 初始版本,实现CONNECT DB的网页端查询和Excel保存功能
+1.0.1 - 20240429: 修正了Excel保存功能的bug,之前保存的Excel文件无法打开
+1.1.0 - 20240506: 增加了对Access DB的支持,可以选择CONNECT DB和Access DB进行查询
+1.1.1 - 20240510: 修正了Access DB查询时的bug,之前查询结果不正确
+1.2.0 - 20240515: 优化了网页界面,增加了查询条件的输入框
+1.2.1 - 20240520: 修正了网页界面的一些显示问题,提升用户体验
+1.3.0 - 20240525: 增加了对AVL BOM导出的支持,可以从Windchill获取BOM并生成Excel文件, by Cyrus
+2.0.0 - 20260108: 重构代码结构,db_mgt.py使用PyPika进行SQL语句生成,提升代码可维护性和扩展性
 2.1.0 - 20260108: 将搜索的条件显示在页面
 2.2.0 - 20260108: 搜索条件输入内容在点击search之后不会清除
 2.3.0 - 20260108: 新增过滤条件“SAP_Description”"techdescription" "editor", 网页端增加输入框。
-2.4.0 - 20260108: 支持多个SAP编号的批量查询，输入多个SAP编号，按空格、逗号、分号分隔， 未完成保存Excel功能
+2.4.0 - 20260108: 支持多个SAP编号的批量查询,输入多个SAP编号,按空格、逗号、分号分隔, 未完成保存Excel功能
 2.5.0 - 20260111: 完成多个SAP编号的批量查询结果直接保存为Excel文件功能
-2.6.0 - 20240610: 在网页端显示软件版本号
+2.6.0 - 20260111: 在网页端显示软件版本号
+3.0.0 - 20260118: 增加了AVL处理页面,支持从Windchill获取BOM,查询数据库,生成AVL Excel文件,并通过AJAX方式下载文件
+        a) 网站打开首页增加跳转到AVL处理页面的按钮, 并添加版本号显示
+        b) 新增AVL处理页面,支持Create AVL和Download AVL功能,使用AJAX方式处理请求和下载文件
+        c) AVL处理页面中的AVL inlcude选项支持“2TFU CN only”和“All”,默认为“2TFU CN only”, 但All选项还存在问题,需要后续修正
 '''
 
 # 版本号
 # xx.yy.zz
-# xx: 大版本，架构性变化
+# xx: 大版本,架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "2.6.0"
+__Version__ = "3.0.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -90,7 +94,7 @@ def debug_print(*args, **kwargs):
 
 app = Flask(__name__)
 
-# 对于IIS生产系统，这段要放在这里，不能放在main里
+# 对于IIS生产系统,这段要放在这里,不能放在main里
 # create DB instance
 db = db_mgt.Database()
 
@@ -113,13 +117,13 @@ WC_Path = "https://lp-global-plm.abb.com/Windchill/protocolAuth/servlet/odata/"
 AVLPart_ListView=set()
 #定义一个空的集合用于在网页端显示内容以供使用者检查
 Component_ListView=set()
-#定义Excel模板中，有效数据的首行
+#定义Excel模板中,有效数据的首行
 Excel_Row=7
 
 
 '''
 初始始页面： 选择数据库
-点击确认之后，会跳转到检索页面，并且会将选择的数据库序号传递过去。
+点击确认之后,会跳转到检索页面,并且会将选择的数据库序号传递过去。
 '''
 @app.route("/", methods=['GET','POST'])
 def DBSelect():
@@ -132,17 +136,17 @@ def DBSelect():
         print (DB_Index)
         return redirect(url_for('index',DBType=DB_Index))
     else:
-        return render_template('DBSelect.html', DB_List=DB_List,)
+        return render_template('DBSelect.html', DB_List=DB_List,Version = __Version__)
 
 '''
-数据库检索和显示页面：初始始显示检索表单，在此之前会尝试打开数据库
+数据库检索和显示页面：初始始显示检索表单,在此之前会尝试打开数据库
 submit之后显示检索内容
 '''
 @app.route("/search/<DBType>", methods=['GET','POST'])
 def index(DBType):
-    # 根据DBType来设置Part Type 列表的内容，DBType为str，对应db_mgt.DBList的index值，从0开始
+    # 根据DBType来设置Part Type 列表的内容,DBType为str,对应db_mgt.DBList的index值,从0开始
     if DBType == '0' or DBType == '3': 
-        #如果将值直接在render_template里赋值，数据第一次会传递不过去，不知原因。
+        #如果将值直接在render_template里赋值,数据第一次会传递不过去,不知原因。
         Part_Type_List=db_mgt.PartTypeList_CONNECT
     elif DBType == '1':
         Part_Type_List=db_mgt.PartTypeList_Access
@@ -225,7 +229,7 @@ def index(DBType):
                 temp_dir = tempfile.gettempdir()    # not used, as in the server the temp dir is not the same as in the local
                 # file_path = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', "SQL_Result.xlsx")
                 # import datetime
-                # 用唯一文件名（如加时间戳），避免冲突
+                # 用唯一文件名（如加时间戳）,避免冲突
                 filename = f"SQL_Result_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
                 file_path = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', filename)
                 if file_path:
@@ -236,7 +240,7 @@ def index(DBType):
                         ws.append(row)
                     wb.save(file_path)
                     flash("Excel保存成功！{}".format(file_path))
-                    # 打开Excel, 文件会保存在服务器中，客户端是无法直接打开这个文件的，此方法行不通的。
+                    # 打开Excel, 文件会保存在服务器中,客户端是无法直接打开这个文件的,此方法行不通的。
                     # print(file_path)                    
                     # os.system('start excel.exe {}'.format('"' + file_path + '"'))
                 # 可以使用send_file来发送文件给客户端
@@ -244,11 +248,11 @@ def index(DBType):
                 return send_file(file_path, as_attachment=True)
                 # return render_template('index.html', Part_Type_List=Part_Type_List, MaxLine=MaxLine, sql_result=sql_result, columnNameList=columnNameList, sql_result_len=sql_result_len)
             else:
-                flash("没有数据，无法保存Excel！")
+                flash("没有数据,无法保存Excel！")
                 return render_template('index.html', Part_Type_List=Part_Type_List,Version=__Version__)
         elif request.form['btn'] == 'SAP_Nums_Search':
             # 搜索多个SAP编号
-            # 处理多个SAP编号的输入，按空格、逗号、分号分隔
+            # 处理多个SAP编号的输入,按空格、逗号、分号分隔
             print("SAP_Nums_Search")
             SAP_Nums_List = re.split(r'[\s,;]+', SAP_Number_List.strip())
             print(SAP_Nums_List)
@@ -317,7 +321,7 @@ def AVLHandle():
     msg_avlHandle = ""
     # 按键使能状态
     btn_enabled = True
-    # 处理POST请求, 即点击按钮之后，判断按键类型并处理
+    # 处理POST请求, 即点击按钮之后,判断按键类型并处理
     if request.method == 'POST':
         # 处理POST请求
         # 获取public部分设置
@@ -342,17 +346,17 @@ def AVLHandle():
         debug_print("AVL_Cmp_range:", AVL_Cmp_range)
         debug_print("excel_file:", excel_file)
 
-        # 以下代码用于处理按钮点击后，界面显示和按钮使能状态，已经在页面的JavaScript中实现，这里注释掉
+        # 以下代码用于处理按钮点击后,界面显示和按钮使能状态,已经在页面的JavaScript中实现,这里注释掉
         # disable all buttons during processing
         # btn_enabled = False  
-        # msg_avlHandle = "正在处理，请稍候..."
+        # msg_avlHandle = "正在处理,请稍候..."
         
         # 处理Create AVL按钮点击事件
         if btn == 'Create_AVL':
             debug_print("="*30)
             debug_print("Create_AVL button clicked. Start processing...")
-            # step1: 准备工作，处理输入参数
-            # 处理 PCBA_Part_Number_List，获取list格式
+            # step1: 准备工作,处理输入参数
+            # 处理 PCBA_Part_Number_List,获取list格式
             PCBA_Part_Number_List = re.split(r'[\s,;]+', PCBA_Part_Number_List.strip())
             # 处理AVL_include选项
             bCHINA_PN_ONLY = True if AVL_include == '2TFU CN only' else False
@@ -361,7 +365,7 @@ def AVLHandle():
             Multi_BOM_SAP_Number_List = []  # SAP Number list in the BOM
             Multi_BOM_SAP_Number_List_Str = ""  # SAP Number list in the BOM, str format
             Multi_PCBA_Part_info_list = []  # PCBA Part info list
-            # Step2: 连接PLM，获取BOM信息
+            # Step2: 连接PLM,获取BOM信息
             debug_print("Starting to get BOM from PLM...")
             for BOM_number in PCBA_Part_Number_List:
                 print("Processing PCBA Part Number:", BOM_number)
@@ -384,7 +388,7 @@ def AVLHandle():
                 flash(db_mgt.DBList[dbindex]+" 打开数据库成功！")
             else:
                 flash(db_mgt.DBList[dbindex]+" 打开数据库出错")
-             # 遍历所有SAP编号，逐个查询, 获取结果
+             # 遍历所有SAP编号,逐个查询, 获取结果
             for SAPNo_Searchby in Multi_BOM_SAP_Number_List:
                 sql_result_each, columnNameList = db.fetch(
                     tableName=tableName, 
@@ -399,15 +403,15 @@ def AVLHandle():
                     )
                 sql_result.append(sql_result_each[0])
             sql_result_len = len(sql_result)
-            # Step4: 保存Excel文件， 使用模板2TFP900033A1076.xlsx
+            # Step4: 保存Excel文件, 使用模板2TFP900033A1076.xlsx
             debug_print("Starting to write AVL Excel file...")
             # Excel模板路径
             template_file = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),  '2TFP900033A1076.xlsx')
             # 输出文件路径
             output_file = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', f"AVL_Result_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
-            # 调用Excel处理模块，生成AVL Excel文件, 结果直接输出到output_file
+            # 调用Excel处理模块,生成AVL Excel文件, 结果直接输出到output_file
             excel_handle.first_write_AVL_to_excel(template_file, sql_result, Multi_PCBA_Part_info_list, output_file)
-            # Step5: 完成操作，返回结果信息
+            # Step5: 完成操作,返回结果信息
             debug_print("AVL Excel file created successfully.")
             # Step6: 提供下载
             msg_avlHandle = "Create AVL button processing completed. If the save dialog did not pop up, please click the Download_AVL button."
@@ -440,7 +444,7 @@ def AVLHandle():
             debug_print("="*30)
             debug_print("Unknown button clicked. Start processing...")
             flash("未知的操作按钮！")
-            # 若出现此情况，直接返回页面
+            # 若出现此情况,直接返回页面
             return render_template('AVLHandle.html',
                                    user=user,
                                    pwd=pwd,
@@ -448,7 +452,7 @@ def AVLHandle():
                                    Version=__Version__,
                                    msg_avlHandle=msg_avlHandle,
                                    btn_enabled=btn_enabled)
-        # Flask常规返回方法，因使用AJAX，此处注释掉
+        # Flask常规返回方法,因使用AJAX,此处注释掉
         # return render_template('AVLHandle.html',
         #                        user=user,
         #                        pwd=pwd,
@@ -458,7 +462,7 @@ def AVLHandle():
         #                        btn_enabled=btn_enabled)
         # enable buttons after processing
         btn_enabled = True
-        # 对按键响应操作完成，返回JSON以便AJAX处理
+        # 对按键响应操作完成,返回JSON以便AJAX处理
         # JavaScript方式刷新页面
         return jsonify({'status': 'completed',
                          'msg': msg_avlHandle,
@@ -472,12 +476,12 @@ def AVLHandle():
 
 
 # =========== 以下部分为Cyrus 生成的AVL BOM相关代码 ==============
-#函数，功能为读取Windhill的BOM表并去除重复。输入，Excel Sheet, WinChill返回的JSON，Level是指BOM结构上的层级，1为首层
+#函数,功能为读取Windhill的BOM表并去除重复。输入,Excel Sheet, WinChill返回的JSON,Level是指BOM结构上的层级,1为首层
 def showBOM(sheet,subpart,level):
     if level > 1:
         #判断PartNumber是否已经存在于当前AVL中
         if not subpart["PartNumber"] in AVLPart_ListView:
-            #判断是否software Part或者Dcoment Part，只有不是时才往下走
+            #判断是否software Part或者Dcoment Part,只有不是时才往下走
             if subpart["Part"]["@odata.type"] != "#PTC.ProdMgmt.ABBDOCPART" and subpart["Part"]["@odata.type"] != "#PTC.ProdMgmt.ABBSOFTWAREPART":
                 #写入到partlist里
                 AVLPart_ListView.add(subpart["PartNumber"])
@@ -497,15 +501,15 @@ def showBOM(sheet,subpart,level):
                 
                 #声明全球变量
                 global Component_ListView
-                if isinstance(ConnectFetch,list):       #只有在数据库中存在该值，如果的返回的值是一个list
-                    if len(ConnectFetch)>0:             #返回和数据中，超过一行，即有有效数据
+                if isinstance(ConnectFetch,list):       #只有在数据库中存在该值,如果的返回的值是一个list
+                    if len(ConnectFetch)>0:             #返回和数据中,超过一行,即有有效数据
                         ConnectData=ConnectFetch[0]
                         #遍历返回的CONNECT数据库
 
                         for index in range(1,16):
                             rownum3=chr(index+67)+str(Excel_Row-1) #第一个字母为D,从D列开始往后写
                             if ConnectData[index]!="":
-                                sheet[rownum3]=ConnectData[index+2] #按照db_mgt里的数值，将结果加上与Manufactory对上的列
+                                sheet[rownum3]=ConnectData[index+2] #按照db_mgt里的数值,将结果加上与Manufactory对上的列
                         coid=Excel_Row-7
                         Component_ListView.add(str(coid)+","+subpart["PartNumber"]+","+subpart["PartName"]+","+ConnectData[1]+","+ConnectData[2])
                 else:
@@ -518,7 +522,7 @@ def showBOM(sheet,subpart,level):
                 showBOM(sheet,subpart2,level+1)
                 
                 
-#函数，用于检验返回的值是否Json语句，以判断是否正确地访问windchill
+#函数,用于检验返回的值是否Json语句,以判断是否正确地访问windchill
 def is_json(myjson):  
     try:  
         json_object = json.loads(myjson)  
@@ -527,15 +531,15 @@ def is_json(myjson):
     return True  
 
 
-#avlindex页面，生成AVL的入口页面
+#avlindex页面,生成AVL的入口页面
 @app.route("/avlindex", methods=['GET','POST'])
 def AVLIndex():
     return render_template('AVLIndex.html')
 
-#avl export页面，生成AVL后的返回页面
+#avl export页面,生成AVL后的返回页面
 @app.route('/exportavl',methods=['GET','POST'])  
 def exportavl():
-    #由于运行在服务器，每次访问时，均需要先重置Global变量以达到预期效果
+    #由于运行在服务器,每次访问时,均需要先重置Global变量以达到预期效果
     global AVLPart_ListView
     AVLPart_ListView.clear()
     global Excel_Row
@@ -545,35 +549,35 @@ def exportavl():
  
     username = request.form.get('user')
     password = request.form.get('password')
-    # 将用户名和密码组合成一个字符串，并用冒号分隔  
+    # 将用户名和密码组合成一个字符串,并用冒号分隔  
     credentials = f"{username}:{password}"  
     # 对这个字符串进行base64编码  
     encoded_credentials = base64.b64encode(credentials.encode('utf-8'))  
     
     partnumber = request.form.get('partnumber')
     #print(partnumber)
-    ########第一步，打开Excel文件并用于数据中转
+    ########第一步,打开Excel文件并用于数据中转
     # 加载现有的 Excel 文件  
     workbook = openpyxl.load_workbook('2TFP900033A1076.xlsx')  
     #指定sheet为AVL
     sheet1 = workbook["BOM Related"]   
 
 
-    ########第二步，获取WindChill Token
+    ########第二步,获取WindChill Token
     url = WC_Path + 'PTC/GetCSRFToken()'  # 目标 URL  
     headers = {  
         'Authorization': 'Basic ' + encoded_credentials.decode('utf-8'),  
         'Accept': 'application/json'  
     }  
     response = requests.get(url, headers=headers)  # 发送带请求头的 GET 请求  
-    #如果返回值不为JSON，重新填写
+    #如果返回值不为JSON,重新填写
     if not is_json(response.text):
-        return render_template('AVLIndex.html', ErrorMessage="访问WindChill失败，请检查用户名、密码及网络连接")
+        return render_template('AVLIndex.html', ErrorMessage="访问WindChill失败,请检查用户名、密码及网络连接")
     json_data = json.loads(response.text)  
     nonce_value = json_data.get('NonceValue')  
     headers['CSRF_NONCE'] = nonce_value
 
-    ########第三步，打开ACCESS数据库并读取AVL对应的BOM表
+    ########第三步,打开ACCESS数据库并读取AVL对应的BOM表
     #打开数据库
     bIsDBOpen=db.openAcc()
     #打开数据表,并查找对应的
@@ -595,7 +599,7 @@ def exportavl():
         BomNum = re.sub(r'[\',()]', '', str(sql_result[index])) 
         sheet1[rownum] = BomNum
         
-        ########第四步，从WindChill里导入BOM表的状态
+        ########第四步,从WindChill里导入BOM表的状态
         url = WC_Path + f"ProdMgmt/Parts?$filter=Number eq '{BomNum}'"  # 目标 URL  
         response = requests.get(url, headers=headers)  # 发送带请求头的 GET 请求  
         json_data = json.loads(response.text)  
@@ -609,10 +613,10 @@ def exportavl():
                 partID = partvalue["ID"]
                 rownum = 'C' + str(index+3)
                 sheet1[rownum] = partvalue['Name']
-                # 由于已经找到了匹配的'design'视图，因此跳出循环  
+                # 由于已经找到了匹配的'design'视图,因此跳出循环  
                 break
         
-        #第五步，根据第四步返回的ID，查找对应的BOM结构
+        #第五步,根据第四步返回的ID,查找对应的BOM结构
         url= WC_Path + "ProdMgmt/Parts('" + partID + "')/PTC.ProdMgmt.GetBOM?$expand=Components($expand=Part($select=Name,Number);$levels=max)"
         response = requests.post(url, headers=headers)  # 发送带请求头的 GET 请求 
         json_data = json.loads(response.text)          
@@ -626,7 +630,7 @@ def exportavl():
     
     return render_template('AVLoutput.html', sql_result=BOM_ListView,AVL=partnumber,PartCount=PartCount,componentlist=Component_ListView)
 
-#超链接，用于下载相应的Excel文件
+#超链接,用于下载相应的Excel文件
 @app.route('/downloadexcel/<AVL>')  
 def downloadFile(AVL):  
     # 返回修改后的Excel文件供下载  
