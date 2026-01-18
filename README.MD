@@ -47,12 +47,16 @@
       其它需要同步时，先同步Repos1，  
       此时Repos2子模块对应的目录是空的，没有同步Repos2的代码下来  
       对于Repos2是作为子模块添加，还需要进行同步  
-      可以执行 (工程根目录下运行)
+      可以执行 (工程根目录下运行)  
       1	# 重新初始化所有子模块（也可以指定具体子模块）  
          git submodule init  
       2	# 更新子模块， 其中最后信息为子模块在本工程的路径  
          git submodule update --remote third_party\PyPika_CONNECT  
-      经过以上处理之后，就可以同步整个工程到本地了。
+      经过以上处理之后，就可以同步整个工程到本地了。  
+   服务器执行以下指令更新到最新代码：
+   git fetch -all # 更新本地对所有远程分支的引用（不会修改本地分支代码，仅更新元数据）  
+   git pull --recurse-submodules # 拉取分支并更新子模块  
+
    
 # ToDo List:
 1. 显示窗口有点难看，需要使用CCS进行润色 (Done)  

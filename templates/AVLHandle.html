@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AVL Automatic Generator</title>
+    <style>
+        table,
+        td,
+        th {
+            /* border: 1px solid black; */
+            border: 1px solid #ddd;
+            font-family: Arial, Helvetica, sans-serif;
+            padding: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: center;
+            background-color: #adacac;
+            color: black;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            /* z-index: 1; */
+        }
+
+        td {
+            text-align: left;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+
+        /* tr:nth-child(even){background-color: #f2f2f2;} */
+    </style>
+</head>
+
+<body>
+    <!-- 大标题 -->
+    <h1>This page is used for AVL automatically handling.</h1>
+    <!-- 显示软件版本信息 -->
+    <div style="position: absolute; top: 10px; right: 30px; color: #888; font-size: 16px;">
+        Version: {{ Version }}
+    </div>
+    <div id="msg_avlHandle" style="height:30px;color:red">
+        {{ msg_avlHandle }}
+    </div>
+
+    <hr style="border:1px solid #aaa;">
+
+    <form method="post" enctype="multipart/form-data">
+        <p>
+            <!-- 公共部分参数设置 -->
+        <table>
+            <h2>Public input setting</h2>
+            <!--表头-->
+            <thead>
+
+            </thead>
+            <!--内容-->
+            <tbody>
+                <!-- windchill账号信息输入 -->
+                <tr>
+                    <td>Please input your Windchill Account
+                    </td>
+                    <td><input type="Text" name="user" value="{{ user|default('') }}"></td>
+                    <td>
+                        eg: CNMALAO or email address
+                    </td>
+                </tr>
+                <tr>
+                    <td>Please input your Windchill Password</td>
+                    <td><input type="password" name="password" value="{{ pwd|default('') }}"></td>
+                </tr>
+                <!-- DB选择 -->
+                <tr>
+                    <td>DB Selection
+                    </td>
+                    <td>
+                        <select name="DB_Select">
+                            <option value="0">CONNECT DB</option>
+                            <option value="1" selected="selected">Access DB</option>
+                        </select>
+                    </td>
+                    <td>
+                        CONNECT DB: Data in Europe Server(Cadence, slow but latest)
+                        <br>Access DB: Data in China Server(AD, fast but may be not latest)
+                        <br><span style="color:red;">For production release, please use "CONNECT DB"</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>AVL include</td>
+                    <td>
+                        <input type="radio" id="all_parts" name="AVL_include" value="All Parts">
+                        <label for="all_parts">All Parts</label>
+                        <br>
+                        <input type="radio" id="cn_only" name="AVL_include" value="2TFU CN only" checked>
+                        <label for="cn_only">2TFU CN only</label>
+                    </td>
+                    <td>
+                        Please select to include all parts or only 2TFU CN parts for AVL generation, default is 2TFU CN
+                        only.
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+
+        <!-- AVL 第一次生成 -->
+        <hr style="border:1px solid #aaa;">
+        <table>
+            <!--表头-->
+            <h2>First AVL Generation</h2>
+            <thead>
+                <tr>
+                    <th colspan=2>{{ResultMessage}}</th>
+                </tr>
+            </thead>
+            <!--内容-->
+            <tbody>
+                <tr>
+                    <td>Please input the PCBA Part Number to generate AVL
+                    </td>
+                    <td><textarea name="PCBA_Part_Number_List" rows="4" cols="50"
+                            style="width:200px; max-width:500px; resize:vertical; overflow-y:auto;"
+                            placeholder="E.g., 2TFE001045D1801, 2TFE001045D1802">{{ PCBA_Part_Number_List|default('') }}</textarea>
+                    </td>
+                    <td>
+                        (Multiple PCBA Part Numbers separated
+                        <br>by space, comma, or semicolon or one per line)
+                    </td>
+                </tr>
+                <tr>
+                    <!-- 操作按键 -->
+                    <td>
+
+                    </td>
+                    <td>
+                        <input type="submit" name="btn" value="Create_AVL" onclick="handleBtn(event);" {% if not
+                            btn_enabled %}disabled{% endif %}>
+                        <input type="submit" name="btn" value="Download_AVL" onclick="handleBtn(event);" {% if not
+                            btn_enabled %}disabled{% endif %}>
+                    </td>
+                    <td>
+                        点击按钮后，由于访问WindChill和CONNECT数据库的速度问题，可能将持续几分钟，点击后请勿再次点击此按钮，确认请点击
+                        <br>After pressing the button, due to the speed of accessing WindChill and CONNECT database, it
+                        may take several minutes.
+                        <br>Please do not click this button again after clicking, confirm by
+                        clicking
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <!-- AVL 对比 -->
+        <hr style="border:1px solid #aaa;">
+        </p>
+        <table>
+            <!--表头-->
+            <h2>AVL Comparision</h2>
+            <thead>
+                <tr>
+                    <th colspan=2>{{ResultMessage}}</th>
+                </tr>
+            </thead>
+            <!--内容-->
+            <tbody>
+                <!-- 选择对比的文件 -->
+                <tr>
+                    <td>Please select the AVL Excel file for comparison:</td>
+                    <td>
+                        <input type="file" name="excel_file" accept=".xls,.xlsx">
+                    </td>
+                    <td>
+                        (Only .xls or .xlsx files are accepted)
+                    </td>
+                </tr>
+                <!-- 选择对比范围 -->
+                <tr>
+                    <td>Compare Range</td>
+                    <td>
+                        <input type="radio" id="AVL_Sheet" name="AVL_Cmp_range" value="AVL_Sheet" checked>
+                        <label for="AVL_Sheet">AVL Sheet Only</label>
+                        <br>
+                        <input type="radio" id="cn_only_compare" name="AVL_Cmp_range" value="BOM_Related_Sheet">
+                        <label for="BOM_Related_Sheet">BOM Related Sheet</label>
+                    </td>
+                    <td>
+                        Please select to compare only the AVL sheet or all BOM related sheets, default is "AVL sheet
+                        only".
+                        <br><b>AVL Sheet Only</b>: only check the ordering information in the "AVL" sheet.
+                        <br><b>BOM Related Sheet</b>: from the "BOM Related" sheet, find all parts used in the BOM, then
+                        combine to a new AVL list, finally compare with the data in the "AVL" sheet.
+                    </td>
+                </tr>
+                <!-- 操作按键 -->
+                <tr>
+                    <td>
+
+                    </td>
+                    <td>
+                        <input type="submit" name="btn" value="Compare_AVL" onclick="handleBtn(event);" {% if not
+                            btn_enabled %}disabled{% endif %}>
+                        <input type="submit" name="btn" value="Download_Result" onclick="handleBtn(event);" {% if not
+                            btn_enabled %}disabled{% endif %}>
+                    </td>
+                    <td>
+                        点击按钮后，由于访问WindChill和CONNECT数据库的速度问题，可能将持续几分钟，点击后请勿再次点击此按钮，确认请点击
+                        <br>After pressing the button, due to the speed of accessing WindChill and CONNECT database, it
+                        may take several minutes.
+                        <br>Please do not click this button again after clicking, confirm by
+                        clicking
+                    </td>
+                </tr>
+
+                <!-- 以下内容会根据AVLResult的值动态生成，未使用 -->
+                {% if AVLResult %}
+                {% for row in AVLResult %}
+                <tr>
+                    {% for item in row %}
+                    <td>{{ item }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="2">No data to display.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </form>
+
+    <!-- AJAX处理 -->
+    <script>
+        // 表单按键处理函数
+        function handleBtn(event) {
+            event.preventDefault(); // 阻止表单默认提交
+
+            // 1. 先更新页面信息
+            document.getElementById('msg_avlHandle').innerText = "Processing, please wait...";
+            // disable单个按钮
+            // document.querySelector('input[name="btn"][value="Create_AVL"]').disabled = true;
+            // disable所有按钮
+            document.querySelectorAll('input[name="btn"]').forEach(function (btn) {
+                btn.disabled = true;
+            });
+
+            // 2. 用AJAX提交表单数据
+            var formData = new FormData(document.querySelector('form'));
+            // 获取当前点击的按钮并添加到表单数据中
+            var btn = event.target;
+            if (btn.name && btn.value) {
+                formData.append(btn.name, btn.value);
+            }
+            // 调试输出表单数据， 浏览器中可以通过控制台查看：Array.from(formData.entries())
+            for (var pair of formData.entries()) {
+                console.log(pair[0] + ': ' + pair[1]);
+            }
+            // 发送AJAX请求，触发Flask后端处理, 模拟按下按钮
+            fetch('/AVLhandle', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // 处理返回的结果
+                    document.getElementById('msg_avlHandle').innerText = data.msg;
+                    // enable单个按钮
+                    // document.querySelector('input[name="btn"][value="Create_AVL"]').disabled = false;
+                    // Enable所有按钮
+                    document.querySelectorAll('input[name="btn"]').forEach(function (btn) {
+                        btn.disabled = false;
+                    });
+                    // 如果有下载链接，自动触发下载，通过跳转到另一链接的方式实现
+                    // 触发Flask后端的下载路由/downloadExcelFile/<filename>
+                    if (data.download_url) {
+                        // 推荐方式1：window.open
+                        // window.open(data.download_url, '_blank');
+
+                        // 推荐方式2：自动创建a标签并点击（更兼容）
+                        let a = document.createElement('a');
+                        a.href = data.download_url;
+                        a.download = '';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    }
+                });
+        }
+    </script>
+</body>
+
+</html>

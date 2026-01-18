@@ -1,29 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DB Select</title>
 </head>
+
 <body>
-    <h1>Please Select the Database to be used:</h1>
-    <form method="post">
-        <p>
-            <label>DB Selection</label>
-            <select name="DB_Select">
-                {% for db_name in DB_List %}
+    <!-- 显示软件版本信息 -->
+    <div style="position: absolute; top: 10px; right: 30px; color: #888; font-size: 16px;">
+        Version: {{ Version }}
+    </div>
+
+        <form method="post">
+            <h1>1. Please Select the Database and Click Submit to the CONNECT Viewer website.</h1>
+            <p>
+                <label>DB Selection</label>
+                <!-- 数据库列表 -->
+                <select name="DB_Select">
+                    {% for db_name in DB_List %}
                     {# 设置默认选项 #}
                     {% if DB_List.index(db_name) == 1 %}
-                        <option value ="{{db_name}}" selected="selected">{{db_name}}</option>
+                    <option value="{{db_name}}" selected="selected">{{db_name}}</option>
                     {% else %}
-                        <option value ="{{db_name}}">{{db_name}}</option>
+                    <option value="{{db_name}}">{{db_name}}</option>
                     {% endif %}
-                {% endfor %}
-            </select>
-        </p>
-        <input type="submit" name="Connect DB">
+                    {% endfor %}
+                </select>
+            </p>
+            <input type="submit" name="Connect DB">
 
-    </form>
+            <!-- 分隔符 -->
+            <hr style="border:1px solid #aaa;">
+            <h2>2. Click to switch to AVL handle Page</h2>
+            <p>
+                <a href="/AVLhandle">
+                    <button type="button">Go to AVL handle Page</button>
+                </a>
+        </form>
 </body>
+
 </html>
