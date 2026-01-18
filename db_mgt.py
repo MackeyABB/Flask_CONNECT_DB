@@ -248,7 +248,7 @@ class Database:
         # AccessDB数据库获取表名的SQL语句
         elif dbindex == 1 or dbindex == 2: 
             DB_Type = "AccessDB"
-        print("Database Type:", DB_Type)
+        # print("Database Type:", DB_Type)
 
         # 仅需要单独判断是搜索某个表还是所有表
         # if not search all, search specified table
@@ -295,7 +295,7 @@ class Database:
             order_by_field="PartNumber",
             order="ASC"
         )
-        print("Generated SQL:\n", final_sql)
+        # print("Generated SQL:\n", final_sql)
         self.cursor.execute(final_sql)
         columnNameList = [column[0] for column in self.cursor.description]
         sql_result = self.cursor.fetchall()

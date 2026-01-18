@@ -44,7 +44,7 @@ excel_mapping = [
     ('R', 25),          # manufact_partnum_7
 ]
 
-def first_write_AVL_to_excel(template_file, sql_result, output_excel_file):
+def first_write_AVL_to_excel(template_file, sql_result, Multi_PCBA_Part_info_list, output_excel_file):
     # 加载模板文件
     wb = openpyxl.load_workbook(template_file)
     # AVL sheet保存数据
@@ -62,4 +62,11 @@ def first_write_AVL_to_excel(template_file, sql_result, output_excel_file):
             else:
                 value = row_data[data_idx]
             sheet_avl[cell] = value
+    # BOM Related sheet保存数据
+    sheet_bom = wb['BOM Related']
+    for row_idx, row_data in enumerate(Multi_PCBA_Part_info_list, start=3):  # Excel
+        # print(row_idx, row_data)
+        sheet_bom.cell(row=row_idx, column=2).value = row_data[0]  # PCBA Part Number
+        sheet_bom.cell(row=row_idx, column=3).value = row_data[3]  # PCBA Part Description
+    # 保存输出文件
     wb.save(output_excel_file)  

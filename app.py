@@ -326,16 +326,17 @@ def AVLHandle():
             # 处理AVL_include选项
             bCHINA_PN_ONLY = True if AVL_include == '2TFU CN only' else False
             # 变量定义
-            Multi_BOM_Info_list = []
-            Multi_BOM_SAP_Number_List = []
-            Multi_BOM_SAP_Number_List_Str = ""
-            Multi_PCBA_Part_info_list = []
+            Multi_BOM_Info_list = []    # PartNumber,PartName,Quantity,DesignatorRange
+            Multi_BOM_SAP_Number_List = []  # SAP Number list in the BOM
+            Multi_BOM_SAP_Number_List_Str = ""  # SAP Number list in the BOM, str format
+            Multi_PCBA_Part_info_list = []  # PCBA Part info list
+            # 连接PLM，获取BOM信息
             for BOM_number in PCBA_Part_Number_List:
                 BOM_Info_list, BOM_SAP_Number_List, BOM_SAP_Number_List_Str, PCBA_Part_info_list = plm.get_BOM(user, pwd, BOM_number, bCHINA_PN_ONLY)
                 Multi_BOM_Info_list += BOM_Info_list
                 Multi_BOM_SAP_Number_List += BOM_SAP_Number_List
                 Multi_BOM_SAP_Number_List_Str += BOM_SAP_Number_List_Str
-                Multi_PCBA_Part_info_list += PCBA_Part_info_list
+                Multi_PCBA_Part_info_list.append(PCBA_Part_info_list)
             
             # debug print before deduplication
             debug_print("Before deduplication:")
@@ -384,11 +385,7 @@ def AVLHandle():
             # 保存Excel文件， 使用模板2TFP900033A1076.xlsx
             template_file = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),  '2TFP900033A1076.xlsx')
             output_file = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', f"AVL_Result_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
-            wb = openpyxl.load_workbook(template_file)
-            excel_handle.first_write_AVL_to_excel(template_file, sql_result, output_file)
-
-            
-
+            excel_handle.first_write_AVL_to_excel(template_file, sql_result, Multi_PCBA_Part_info_list, output_file)
             msg_avlHandle = "Create AVL 操作完成，若没有弹出保存对话框保存Excel文件，请点击Download_AVL按钮。"
         elif btn == 'Download_AVL':
             # 处理Download AVL按钮点击事件
@@ -415,9 +412,7 @@ def AVLHandle():
                                    Version=__Version__,
                                    msg_avlHandle=msg_avlHandle,
                                    btn_enabled=btn_enabled)
-
-        # debug only, to reused the input data
-        msg_avlHandle = "操作完成，当前仅为调试显示输入内容。"
+        # Flask常规返回方法，因使用AJAX，此处注释掉
         # return render_template('AVLHandle.html',
         #                        user=user,
         #                        pwd=pwd,
@@ -427,6 +422,7 @@ def AVLHandle():
         #                        btn_enabled=btn_enabled)
         # enable buttons after processing
         btn_enabled = True
+        # 对按键响应操作完成，返回JSON以便AJAX处理
         # JavaScript方式刷新页面
         return jsonify({'status': 'completed',
                          'msg': msg_avlHandle,
