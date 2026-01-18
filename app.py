@@ -284,6 +284,18 @@ def index(DBType):
         return render_template('index.html', Part_Type_List=Part_Type_List, Version=__Version__)
 
 # =========== 以下部分为2026/01 之后新的AVL处理代码 ==============
+def download_excel(output_excel_file):
+    """ 弹窗下载AVL Excel文件。
+    Args:
+        param output_excel_file (str): 输出Excel文件路径
+    return: 
+        output_excel_file (str): 输出Excel文件路径
+    """
+    # 这里可以添加下载文件的逻辑
+    response_file = send_file(output_excel_file, as_attachment=True)
+    return response_file
+
+
 @app.route("/AVLhandle", methods=['GET','POST'])
 def AVLHandle():
     # 网页运行信息
@@ -382,7 +394,10 @@ def AVLHandle():
             excel_handle.first_write_AVL_to_excel(template_file, sql_result, Multi_PCBA_Part_info_list, output_file)
             # Step5: 完成操作，返回结果信息
             debug_print("AVL Excel file created successfully.")
+            # Step6: 提供下载
             msg_avlHandle = "Create AVL button processing completed. If the save dialog did not pop up, please click the Download_AVL button."
+            download_excel(output_file)
+            
         # 处理Download AVL按钮点击事件
         elif btn == 'Download_AVL':
             debug_print("="*30)
