@@ -45,6 +45,17 @@ excel_mapping = [
 ]
 
 def first_write_AVL_to_excel(template_file, sql_result, Multi_PCBA_Part_info_list, output_excel_file):
+    """
+    首次将AVL数据写入Excel文件。
+    Args:
+        param template_file (str): 模板文件路径
+        param sql_result (list): 从数据库查询得到的AVL数据列表
+        param Multi_PCBA_Part_info_list (list): 从PLM获取的PCBA物料信息列表
+        param output_excel_file (str): 输出Excel文件路径
+    return: 
+        None
+    """
+
     # 加载模板文件
     wb = openpyxl.load_workbook(template_file)
     # AVL sheet保存数据
@@ -71,3 +82,5 @@ def first_write_AVL_to_excel(template_file, sql_result, Multi_PCBA_Part_info_lis
             sheet_bom.cell(row=row_idx, column=3).value = row_data[3]  # PCBA Part Description
     # 保存输出文件
     wb.save(output_excel_file)  
+
+
