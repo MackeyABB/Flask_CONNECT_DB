@@ -32,6 +32,7 @@ Revision History:
             PLM_Basic_Auth_ByPass_MFA_Get_BOM.py升级到1.4.0版本,get_BOM()函数增加返回PLM登录是否成功的标志PLM_Login_OK。
 3.3.2 - 20260119: 修正CONNECT Viewer页面中的SAP Number List Search功能的bug
             当SAP编号未找到时,会进行判断，并添加空行占位,填写SAP number
+3.4.0 - 20260119: "Download_AVL"按键实现下载功能
 '''
 
 # 版本号
@@ -39,7 +40,7 @@ Revision History:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.3.2"
+__Version__ = "3.4.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -59,12 +60,12 @@ from werkzeug.utils import secure_filename
 import os
 import third_party.PLM_Handle.PLM_Basic_Auth_ByPass_MFA_Get_BOM as plm
 import third_party.Excel_Handle.AVL_Excel_Handle as excel_handle
-  
-app = Flask(__name__)  
 import openpyxl
 import tempfile
 import os
 
+# Global Variables
+first_AVL_Output_File = ""  # Excel输出文件路径
 
 # debug print, print到控制台
 DEBUG_PRINT = True
@@ -338,6 +339,8 @@ def AVLHandle():
     
     if request.method == 'POST':
         # 处理POST请求
+        # 定义全局变量
+        global first_AVL_Output_File  # 声明为全局变量, 可以其它函数访问
         # 获取public部分设置
         user = request.form.get('user')
         pwd = request.form.get('password')
@@ -470,23 +473,31 @@ def AVLHandle():
             # Excel模板路径
             template_file = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),  '2TFP900033A1076.xlsx')
             # 输出文件路径
-            output_file = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', f"AVL_Result_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
+            first_AVL_Output_File = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', f"AVL_Result_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
             # 调用Excel处理模块,生成AVL Excel文件, 结果直接输出到output_file
-            excel_handle.first_write_AVL_to_excel(template_file, sql_result, Multi_PCBA_Part_info_list, output_file)
+            excel_handle.first_write_AVL_to_excel(template_file, sql_result, Multi_PCBA_Part_info_list, first_AVL_Output_File)
             # Step5: 完成操作,返回结果信息
             debug_print("AVL Excel file created successfully.")
             # Step6: 提供下载
             msg_avlHandle = "Create AVL button processing completed. If the save dialog did not pop up, please click the Download_AVL button."
             # AJAX方式下载文件
-            return download_excel(output_file, AJAX=True, msg_avlHandle=msg_avlHandle, btn_enabled=True)
+            return download_excel(first_AVL_Output_File, AJAX=True, msg_avlHandle=msg_avlHandle, btn_enabled=True)
 
         # 处理Download AVL按钮点击事件
         elif btn == 'Download_AVL':
             debug_print("="*30)
             debug_print("Download_AVL button clicked. Start processing...")
-
+            if not first_AVL_Output_File or not os.path.exists(first_AVL_Output_File):
+                msg_avlHandle = "AVL Excel file not found. Please click the Create AVL button first."
+                return jsonify({
+                    'status': 'error', 
+                    'msg': msg_avlHandle,
+                    'btn_enabled': btn_enabled
+                })
+            # AJAX方式下载文件
             debug_print("Download AVL successfully.")
             msg_avlHandle = "Download_AVL button processing completed."
+            return download_excel(first_AVL_Output_File, AJAX=True, msg_avlHandle=msg_avlHandle, btn_enabled=True)
         # 处理Compare AVL按钮点击事件
         elif btn == 'Compare_AVL':
             debug_print("="*30)
