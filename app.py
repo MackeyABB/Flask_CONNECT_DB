@@ -25,6 +25,7 @@ Revision History:
         b) 新增AVL处理页面,支持Create AVL和Download AVL功能,使用AJAX方式处理请求和下载文件
         c) AVL处理页面中的AVL inlcude选项支持“2TFU CN only”和“All”,默认为“2TFU CN only”, 但All选项还存在问题,需要后续修正
 3.1.0 - 20260118: AVL页面添加跳转回主页面的按钮
+3.1.1 - 20260119: 修正了AVL处理页面中的bug: AVL_include选项为"All Parts"时,未正确输出找不到ordering information的Parts导出Excel文件的问题。
 '''
 
 # 版本号
@@ -32,7 +33,7 @@ Revision History:
 # xx: 大版本,架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.1.0"
+__Version__ = "3.1.1"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -402,7 +403,19 @@ def AVLHandle():
                     TechDescription_Searchby='',
                     Editor_Searchby=''
                     )
-                sql_result.append(sql_result_each[0])
+                if sql_result_each: # 非空结果才添加
+                    sql_result.append(sql_result_each[0])
+                else: # 未找到结果, 添加空行占位,填写SAP number和description, 以便后续Excel处理
+                    SAP_Description_Searchby = ""  # 默认空
+                    # 从Multi_BOM_Info_list中获取SAP_Description
+                    # todo: SAP description在Multi_BOM_Info_list的第二个元素中
+                    for bom_info in Multi_BOM_Info_list:
+                        if bom_info.split(',')[0] == SAPNo_Searchby:
+                            SAP_Description_Searchby = bom_info.split(',')[1]
+                            break
+                    # 数据类型为set
+                    Not_Found_SAP_info = ('','', SAPNo_Searchby, SAP_Description_Searchby)
+                    sql_result.append(Not_Found_SAP_info)
             sql_result_len = len(sql_result)
             # Step4: 保存Excel文件, 使用模板2TFP900033A1076.xlsx
             debug_print("Starting to write AVL Excel file...")

@@ -62,17 +62,26 @@ def first_write_AVL_to_excel(template_file, sql_result, Multi_PCBA_Part_info_lis
     sheet_avl = wb['AVL']
     # AVL sheet保存数据
     for row_idx, row_data in enumerate(sql_result, start=7):  # Excel第7行开始
-        for col_idx, (col_letter, data_idx) in enumerate(excel_mapping, start=1):
-            cell = f"{col_letter}{row_idx}"
-            if data_idx is None:
-                # 特殊处理：A列为序号，D列为空
-                if col_letter == 'A':
-                    value = row_idx - 6
+        if len(row_data) > 4: # 数据有效， 表示查询到了数据
+            for col_idx, (col_letter, data_idx) in enumerate(excel_mapping, start=1):
+                cell = f"{col_letter}{row_idx}"
+                if data_idx is None:
+                    # 特殊处理：A列为序号，D列为空
+                    if col_letter == 'A':
+                        value = row_idx - 6
+                    else:
+                        value = ""
                 else:
-                    value = ""
-            else:
-                value = row_data[data_idx]
-            sheet_avl[cell] = value
+                    value = row_data[data_idx]
+                sheet_avl[cell] = value
+        else: # 找不到数据，只填写序号、SAP_Number、SAP_Description
+            # A 列为序号
+            sheet_avl[f"A{row_idx}"] = row_idx - 6
+            # B 列为SAP_Number
+            sheet_avl[f"B{row_idx}"] = row_data[2]
+            # C 列为SAP_Description
+            sheet_avl[f"C{row_idx}"] = row_data[3]
+
     # BOM Related sheet保存数据
     sheet_bom = wb['BOM Related']
     for row_idx, row_data in enumerate(Multi_PCBA_Part_info_list, start=3):  # Excel
