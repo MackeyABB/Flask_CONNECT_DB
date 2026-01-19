@@ -26,8 +26,8 @@ Revision History:
         c) AVL处理页面中的AVL inlcude选项支持“2TFU CN only”和“All”,默认为“2TFU CN only”, 但All选项还存在问题,需要后续修正
 3.1.0 - 20260118: AVL页面添加跳转回主页面的按钮
 3.1.1 - 20260119: 修正了AVL处理页面中的bug: AVL_include选项为"All Parts"时,未正确输出找不到ordering information的Parts导出Excel文件的问题。
-3.2.0 - 20260201: 优化了AVL处理页面的问题, 如果输入Windchill用户名和密码为空, PCBA part number为空, 则提示并不继续处理
-
+3.2.0 - 20260119: 优化了AVL处理页面的问题, 如果输入Windchill用户名和密码为空, PCBA part number为空, 则提示并不继续处理
+3.3.0 - 20260119: 增加判断是否获取到ordering information, 若没有则不继续处理,并提示用户
 '''
 
 # 版本号
@@ -35,7 +35,7 @@ Revision History:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.2.0"
+__Version__ = "3.3.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -413,7 +413,7 @@ def AVLHandle():
                 flash(db_mgt.DBList[dbindex]+" 打开数据库成功！")
             else:
                 flash(db_mgt.DBList[dbindex]+" 打开数据库出错")
-             # 遍历所有SAP编号,逐个查询, 获取结果
+             # 遍历所有SAP编号,逐个查询, 获得每个SAP编号的ordering information，并保存在sql_result中
             for SAPNo_Searchby in Multi_BOM_SAP_Number_List:
                 sql_result_each, columnNameList = db.fetch(
                     tableName=tableName, 
@@ -439,7 +439,15 @@ def AVLHandle():
                     # 数据类型为set
                     Not_Found_SAP_info = ('','', SAPNo_Searchby, SAP_Description_Searchby)
                     sql_result.append(Not_Found_SAP_info)
+            # 判断是否有查询到数据，若没有则不继续处理，并提示用户
             sql_result_len = len(sql_result)
+            if sql_result_len == 0:
+                msg_avlHandle = "No ordering information found for the given PCBA Part Numbers' BOM SAP Numbers."
+                return jsonify({
+                    'status': 'error', 
+                    'msg': msg_avlHandle,
+                    'btn_enabled': btn_enabled
+                })
             # Step4: 保存Excel文件, 使用模板2TFP900033A1076.xlsx
             debug_print("Starting to write AVL Excel file...")
             # Excel模板路径
