@@ -30,6 +30,8 @@ Revision History:
 3.3.0 - 20260119: 增加判断是否获取到ordering information, 若没有则不继续处理,并提示用户
 3.3.1 - 20260119: 优化PLM登录失败的处理逻辑,避免后续函数调用出错。
             PLM_Basic_Auth_ByPass_MFA_Get_BOM.py升级到1.4.0版本,get_BOM()函数增加返回PLM登录是否成功的标志PLM_Login_OK。
+3.3.2 - 20260119: 修正CONNECT Viewer页面中的SAP Number List Search功能的bug
+            当SAP编号未找到时,会进行判断，并添加空行占位,填写SAP number
 '''
 
 # 版本号
@@ -37,7 +39,7 @@ Revision History:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.3.1"
+__Version__ = "3.3.2"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -276,7 +278,10 @@ def index(DBType):
                     TechDescription_Searchby='',
                     Editor_Searchby=''
                     )
-                sql_result.append(sql_result_each[0])
+                if sql_result_each: # 非空结果才添加
+                    sql_result.append(sql_result_each[0])
+                else: # 未找到结果, 添加空行占位,填写SAP number
+                    sql_result.append(['']*2 + [SAPNo_Searchby] + [''] * (len(columnNameList) - 3))
             sql_result_len = len(sql_result)
             return render_template(
                 'index.html',
