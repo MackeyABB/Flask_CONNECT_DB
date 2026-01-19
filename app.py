@@ -26,14 +26,16 @@ Revision History:
         c) AVL处理页面中的AVL inlcude选项支持“2TFU CN only”和“All”,默认为“2TFU CN only”, 但All选项还存在问题,需要后续修正
 3.1.0 - 20260118: AVL页面添加跳转回主页面的按钮
 3.1.1 - 20260119: 修正了AVL处理页面中的bug: AVL_include选项为"All Parts"时,未正确输出找不到ordering information的Parts导出Excel文件的问题。
+3.2.0 - 20260201: 优化了AVL处理页面的问题, 如果输入Windchill用户名和密码为空, PCBA part number为空, 则提示并不继续处理
+
 '''
 
 # 版本号
 # xx.yy.zz
-# xx: 大版本,架构性变化
+# xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.1.1"
+__Version__ = "3.2.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -319,11 +321,14 @@ def downloadExcelFile(filename):
 
 @app.route("/AVLhandle", methods=['GET','POST'])
 def AVLHandle():
+    # test flash('msg test'), 需要进行手动清除
+    # flash('Welcome to AVL Handle Page!')
     # 网页运行信息
     msg_avlHandle = ""
     # 按键使能状态
     btn_enabled = True
     # 处理POST请求, 即点击按钮之后,判断按键类型并处理
+    
     if request.method == 'POST':
         # 处理POST请求
         # 获取public部分设置
@@ -348,6 +353,16 @@ def AVLHandle():
         debug_print("AVL_Cmp_range:", AVL_Cmp_range)
         debug_print("excel_file:", excel_file)
 
+        # 判断是否输入账号密码
+        if (not user or user.strip() == "") or (not pwd or pwd.strip() == ""):
+            msg_avlHandle = "Windchill user name and password cannot be empty. Please input valid credentials."
+            return jsonify({
+                'status': 'error', 
+                'msg': msg_avlHandle,
+                'btn_enabled': btn_enabled
+            })
+
+
         # 以下代码用于处理按钮点击后,界面显示和按钮使能状态,已经在页面的JavaScript中实现,这里注释掉
         # disable all buttons during processing
         # btn_enabled = False  
@@ -358,6 +373,14 @@ def AVLHandle():
             debug_print("="*30)
             debug_print("Create_AVL button clicked. Start processing...")
             # step1: 准备工作,处理输入参数
+            # 判断PCBA Part Number List是否为空
+            if not PCBA_Part_Number_List or PCBA_Part_Number_List.strip() == "":
+                msg_avlHandle = "PCBA Part Number list cannot be empty. Please input valid PCBA Part Numbers."
+                return jsonify({
+                    'status': 'error', 
+                    'msg': msg_avlHandle,
+                    'btn_enabled': btn_enabled
+                })
             # 处理 PCBA_Part_Number_List,获取list格式
             PCBA_Part_Number_List = re.split(r'[\s,;]+', PCBA_Part_Number_List.strip())
             # 处理AVL_include选项
