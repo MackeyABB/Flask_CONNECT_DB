@@ -17,7 +17,7 @@ Revision log:
 1.1.0 - 20260114: 增加返回数据的类型，包括SAP_Number_List和对应的string格式，方便后续处理。
 1.2.0 - 20260115: 修改返回数据结构，set改为list类型，更符合实际用途。
 1.3.0 - 20260115: 增加函数get_BOM(user, pwd, BOM_number, IsChinaPNOnly=bCHINA_PN_ONLY)可以一步获取BOM信息，简化调用。
-
+1.4.0 - 20260119: 优化PLM登录失败的处理逻辑，避免后续函数调用出错。get_BOM()函数增加返回PLM登录是否成功的标志PLM_Login_OK。
 '''
 
 # 版本号
@@ -25,7 +25,7 @@ Revision log:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__revision__ = '1.3.0'
+__revision__ = '1.4.0'
 
 import requests
 import base64
@@ -214,11 +214,17 @@ def get_BOM(user, pwd, BOM_number, IsChinaPNOnly=bCHINA_PN_ONLY):
         BOM_SAP_Number_List (list): 包含BOM的SAP_Number清单的列表
         BOM_SAP_Number_List_Str (str): 包含BOM的SAP_Number清单
         PCBA_Part_info_list (list): 包含PCBA Part的详细信息
+        PLM_Login_OK (bool): PLM登录是否成功
     '''
     token = get_basic_token(user, pwd)
     headers = generate_auth_header(token)
-    BOM_Info_list, BOM_SAP_Number_List, BOM_SAP_Number_List_Str, PCBA_Part_info_list = get_Uses_Bom(headers, BOM_number, IsChinaPNOnly)
-    return BOM_Info_list, BOM_SAP_Number_List, BOM_SAP_Number_List_Str, PCBA_Part_info_list
+    if headers is None:
+        PLM_Login_OK = False
+        BOM_Info_list, BOM_SAP_Number_List, BOM_SAP_Number_List_Str, PCBA_Part_info_list = [], [], "", []
+    else:
+        PLM_Login_OK = True
+        BOM_Info_list, BOM_SAP_Number_List, BOM_SAP_Number_List_Str, PCBA_Part_info_list = get_Uses_Bom(headers, BOM_number, IsChinaPNOnly)
+    return BOM_Info_list, BOM_SAP_Number_List, BOM_SAP_Number_List_Str, PCBA_Part_info_list, PLM_Login_OK
 
 if __name__ == "__main__":
     if True:

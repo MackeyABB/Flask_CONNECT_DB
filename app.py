@@ -24,14 +24,23 @@ Revision History:
         a) 网站打开首页增加跳转到AVL处理页面的按钮, 并添加版本号显示
         b) 新增AVL处理页面,支持Create AVL和Download AVL功能,使用AJAX方式处理请求和下载文件
         c) AVL处理页面中的AVL inlcude选项支持“2TFU CN only”和“All”,默认为“2TFU CN only”, 但All选项还存在问题,需要后续修正
+3.1.0 - 20260118: AVL页面添加跳转回主页面的按钮
+3.1.1 - 20260119: 修正了AVL处理页面中的bug: AVL_include选项为"All Parts"时,未正确输出找不到ordering information的Parts导出Excel文件的问题。
+3.2.0 - 20260119: 优化了AVL处理页面的问题, 如果输入Windchill用户名和密码为空, PCBA part number为空, 则提示并不继续处理
+3.3.0 - 20260119: 增加判断是否获取到ordering information, 若没有则不继续处理,并提示用户
+3.3.1 - 20260119: 优化PLM登录失败的处理逻辑,避免后续函数调用出错。
+            PLM_Basic_Auth_ByPass_MFA_Get_BOM.py升级到1.4.0版本,get_BOM()函数增加返回PLM登录是否成功的标志PLM_Login_OK。
+3.3.2 - 20260119: 修正CONNECT Viewer页面中的SAP Number List Search功能的bug
+            当SAP编号未找到时,会进行判断，并添加空行占位,填写SAP number
+3.4.0 - 20260119: "Download_AVL"按键实现下载功能
 '''
 
 # 版本号
 # xx.yy.zz
-# xx: 大版本,架构性变化
+# xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.0.0"
+__Version__ = "3.4.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -51,12 +60,12 @@ from werkzeug.utils import secure_filename
 import os
 import third_party.PLM_Handle.PLM_Basic_Auth_ByPass_MFA_Get_BOM as plm
 import third_party.Excel_Handle.AVL_Excel_Handle as excel_handle
-  
-app = Flask(__name__)  
 import openpyxl
 import tempfile
 import os
 
+# Global Variables
+first_AVL_Output_File = ""  # Excel输出文件路径
 
 # debug print, print到控制台
 DEBUG_PRINT = True
@@ -270,7 +279,10 @@ def index(DBType):
                     TechDescription_Searchby='',
                     Editor_Searchby=''
                     )
-                sql_result.append(sql_result_each[0])
+                if sql_result_each: # 非空结果才添加
+                    sql_result.append(sql_result_each[0])
+                else: # 未找到结果, 添加空行占位,填写SAP number
+                    sql_result.append(['']*2 + [SAPNo_Searchby] + [''] * (len(columnNameList) - 3))
             sql_result_len = len(sql_result)
             return render_template(
                 'index.html',
@@ -317,13 +329,18 @@ def downloadExcelFile(filename):
 
 @app.route("/AVLhandle", methods=['GET','POST'])
 def AVLHandle():
+    # test flash('msg test'), 需要进行手动清除
+    # flash('Welcome to AVL Handle Page!')
     # 网页运行信息
     msg_avlHandle = ""
     # 按键使能状态
     btn_enabled = True
     # 处理POST请求, 即点击按钮之后,判断按键类型并处理
+    
     if request.method == 'POST':
         # 处理POST请求
+        # 定义全局变量
+        global first_AVL_Output_File  # 声明为全局变量, 可以其它函数访问
         # 获取public部分设置
         user = request.form.get('user')
         pwd = request.form.get('password')
@@ -346,6 +363,16 @@ def AVLHandle():
         debug_print("AVL_Cmp_range:", AVL_Cmp_range)
         debug_print("excel_file:", excel_file)
 
+        # 判断是否输入账号密码
+        if (not user or user.strip() == "") or (not pwd or pwd.strip() == ""):
+            msg_avlHandle = "Windchill user name and password cannot be empty. Please input valid credentials."
+            return jsonify({
+                'status': 'error', 
+                'msg': msg_avlHandle,
+                'btn_enabled': btn_enabled
+            })
+
+
         # 以下代码用于处理按钮点击后,界面显示和按钮使能状态,已经在页面的JavaScript中实现,这里注释掉
         # disable all buttons during processing
         # btn_enabled = False  
@@ -356,6 +383,14 @@ def AVLHandle():
             debug_print("="*30)
             debug_print("Create_AVL button clicked. Start processing...")
             # step1: 准备工作,处理输入参数
+            # 判断PCBA Part Number List是否为空
+            if not PCBA_Part_Number_List or PCBA_Part_Number_List.strip() == "":
+                msg_avlHandle = "PCBA Part Number list cannot be empty. Please input valid PCBA Part Numbers."
+                return jsonify({
+                    'status': 'error', 
+                    'msg': msg_avlHandle,
+                    'btn_enabled': btn_enabled
+                })
             # 处理 PCBA_Part_Number_List,获取list格式
             PCBA_Part_Number_List = re.split(r'[\s,;]+', PCBA_Part_Number_List.strip())
             # 处理AVL_include选项
@@ -369,11 +404,21 @@ def AVLHandle():
             debug_print("Starting to get BOM from PLM...")
             for BOM_number in PCBA_Part_Number_List:
                 print("Processing PCBA Part Number:", BOM_number)
-                BOM_Info_list, BOM_SAP_Number_List, BOM_SAP_Number_List_Str, PCBA_Part_info_list = plm.get_BOM(user, pwd, BOM_number, bCHINA_PN_ONLY)
-                Multi_BOM_Info_list += BOM_Info_list
-                Multi_BOM_SAP_Number_List += BOM_SAP_Number_List
-                Multi_BOM_SAP_Number_List_Str += BOM_SAP_Number_List_Str
-                Multi_PCBA_Part_info_list.append(PCBA_Part_info_list)
+                BOM_Info_list, BOM_SAP_Number_List, BOM_SAP_Number_List_Str, PCBA_Part_info_list, PLM_Login_OK = plm.get_BOM(user, pwd, BOM_number, bCHINA_PN_ONLY)
+                if not PLM_Login_OK:
+                    debug_print(f"Failed to login to Windchill for PCBA Part Number: {BOM_number}")
+                    msg_avlHandle = "Failed to login to Windchill. Please check your username, password and network connection."
+                    return jsonify({
+                        'status': 'error', 
+                        'msg': msg_avlHandle,
+                        'btn_enabled': btn_enabled
+                    })
+                else:
+                    debug_print(f"BOM Info for {BOM_number} retrieved successfully.")
+                    Multi_BOM_Info_list += BOM_Info_list
+                    Multi_BOM_SAP_Number_List += BOM_SAP_Number_List
+                    Multi_BOM_SAP_Number_List_Str += BOM_SAP_Number_List_Str
+                    Multi_PCBA_Part_info_list.append(PCBA_Part_info_list)
             # 去除重复项
             Multi_BOM_SAP_Number_List = list(set(Multi_BOM_SAP_Number_List))
             Multi_BOM_Info_list = list(set(Multi_BOM_Info_list))
@@ -388,7 +433,7 @@ def AVLHandle():
                 flash(db_mgt.DBList[dbindex]+" 打开数据库成功！")
             else:
                 flash(db_mgt.DBList[dbindex]+" 打开数据库出错")
-             # 遍历所有SAP编号,逐个查询, 获取结果
+             # 遍历所有SAP编号,逐个查询, 获得每个SAP编号的ordering information，并保存在sql_result中
             for SAPNo_Searchby in Multi_BOM_SAP_Number_List:
                 sql_result_each, columnNameList = db.fetch(
                     tableName=tableName, 
@@ -401,30 +446,58 @@ def AVLHandle():
                     TechDescription_Searchby='',
                     Editor_Searchby=''
                     )
-                sql_result.append(sql_result_each[0])
+                if sql_result_each: # 非空结果才添加
+                    sql_result.append(sql_result_each[0])
+                else: # 未找到结果, 添加空行占位,填写SAP number和description, 以便后续Excel处理
+                    SAP_Description_Searchby = ""  # 默认空
+                    # 从Multi_BOM_Info_list中获取SAP_Description
+                    # todo: SAP description在Multi_BOM_Info_list的第二个元素中
+                    for bom_info in Multi_BOM_Info_list:
+                        if bom_info.split(',')[0] == SAPNo_Searchby:
+                            SAP_Description_Searchby = bom_info.split(',')[1]
+                            break
+                    # 数据类型为set
+                    Not_Found_SAP_info = ('','', SAPNo_Searchby, SAP_Description_Searchby)
+                    sql_result.append(Not_Found_SAP_info)
+            # 判断是否有查询到数据，若没有则不继续处理，并提示用户
             sql_result_len = len(sql_result)
+            if sql_result_len == 0:
+                msg_avlHandle = "No ordering information found for the given PCBA Part Numbers' BOM SAP Numbers."
+                return jsonify({
+                    'status': 'error', 
+                    'msg': msg_avlHandle,
+                    'btn_enabled': btn_enabled
+                })
             # Step4: 保存Excel文件, 使用模板2TFP900033A1076.xlsx
             debug_print("Starting to write AVL Excel file...")
             # Excel模板路径
             template_file = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),  '2TFP900033A1076.xlsx')
             # 输出文件路径
-            output_file = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', f"AVL_Result_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
+            first_AVL_Output_File = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', f"AVL_Result_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
             # 调用Excel处理模块,生成AVL Excel文件, 结果直接输出到output_file
-            excel_handle.first_write_AVL_to_excel(template_file, sql_result, Multi_PCBA_Part_info_list, output_file)
+            excel_handle.first_write_AVL_to_excel(template_file, sql_result, Multi_PCBA_Part_info_list, first_AVL_Output_File)
             # Step5: 完成操作,返回结果信息
             debug_print("AVL Excel file created successfully.")
             # Step6: 提供下载
             msg_avlHandle = "Create AVL button processing completed. If the save dialog did not pop up, please click the Download_AVL button."
             # AJAX方式下载文件
-            return download_excel(output_file, AJAX=True, msg_avlHandle=msg_avlHandle, btn_enabled=True)
+            return download_excel(first_AVL_Output_File, AJAX=True, msg_avlHandle=msg_avlHandle, btn_enabled=True)
 
         # 处理Download AVL按钮点击事件
         elif btn == 'Download_AVL':
             debug_print("="*30)
             debug_print("Download_AVL button clicked. Start processing...")
-
+            if not first_AVL_Output_File or not os.path.exists(first_AVL_Output_File):
+                msg_avlHandle = "AVL Excel file not found. Please click the Create AVL button first."
+                return jsonify({
+                    'status': 'error', 
+                    'msg': msg_avlHandle,
+                    'btn_enabled': btn_enabled
+                })
+            # AJAX方式下载文件
             debug_print("Download AVL successfully.")
             msg_avlHandle = "Download_AVL button processing completed."
+            return download_excel(first_AVL_Output_File, AJAX=True, msg_avlHandle=msg_avlHandle, btn_enabled=True)
         # 处理Compare AVL按钮点击事件
         elif btn == 'Compare_AVL':
             debug_print("="*30)

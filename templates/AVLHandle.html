@@ -52,9 +52,26 @@
     <div style="position: absolute; top: 10px; right: 30px; color: #888; font-size: 16px;">
         Version: {{ Version }}
     </div>
+    
+    <!-- 用于Flash 消息显示 -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div style="padding: 10px; margin: 10px 0; background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; border-radius: 4px;">
+                {% for message in messages %}
+                    <p style="margin: 5px 0;">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    
+    <!-- AJAX 显示消息显示 -->
     <div id="msg_avlHandle" style="height:30px;color:red">
         {{ msg_avlHandle }}
     </div>
+    <!-- 返回主页面按钮 -->
+    <a href="/">
+        <button type="button">Return to Main Page</button>
+    </a>
 
     <hr style="border:1px solid #aaa;">
 
