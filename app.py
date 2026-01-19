@@ -28,6 +28,8 @@ Revision History:
 3.1.1 - 20260119: 修正了AVL处理页面中的bug: AVL_include选项为"All Parts"时,未正确输出找不到ordering information的Parts导出Excel文件的问题。
 3.2.0 - 20260119: 优化了AVL处理页面的问题, 如果输入Windchill用户名和密码为空, PCBA part number为空, 则提示并不继续处理
 3.3.0 - 20260119: 增加判断是否获取到ordering information, 若没有则不继续处理,并提示用户
+3.3.1 - 20260119: 优化PLM登录失败的处理逻辑,避免后续函数调用出错。
+            PLM_Basic_Auth_ByPass_MFA_Get_BOM.py升级到1.4.0版本,get_BOM()函数增加返回PLM登录是否成功的标志PLM_Login_OK。
 '''
 
 # 版本号
@@ -35,7 +37,7 @@ Revision History:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.3.0"
+__Version__ = "3.3.1"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -394,11 +396,21 @@ def AVLHandle():
             debug_print("Starting to get BOM from PLM...")
             for BOM_number in PCBA_Part_Number_List:
                 print("Processing PCBA Part Number:", BOM_number)
-                BOM_Info_list, BOM_SAP_Number_List, BOM_SAP_Number_List_Str, PCBA_Part_info_list = plm.get_BOM(user, pwd, BOM_number, bCHINA_PN_ONLY)
-                Multi_BOM_Info_list += BOM_Info_list
-                Multi_BOM_SAP_Number_List += BOM_SAP_Number_List
-                Multi_BOM_SAP_Number_List_Str += BOM_SAP_Number_List_Str
-                Multi_PCBA_Part_info_list.append(PCBA_Part_info_list)
+                BOM_Info_list, BOM_SAP_Number_List, BOM_SAP_Number_List_Str, PCBA_Part_info_list, PLM_Login_OK = plm.get_BOM(user, pwd, BOM_number, bCHINA_PN_ONLY)
+                if not PLM_Login_OK:
+                    debug_print(f"Failed to login to Windchill for PCBA Part Number: {BOM_number}")
+                    msg_avlHandle = "Failed to login to Windchill. Please check your username, password and network connection."
+                    return jsonify({
+                        'status': 'error', 
+                        'msg': msg_avlHandle,
+                        'btn_enabled': btn_enabled
+                    })
+                else:
+                    debug_print(f"BOM Info for {BOM_number} retrieved successfully.")
+                    Multi_BOM_Info_list += BOM_Info_list
+                    Multi_BOM_SAP_Number_List += BOM_SAP_Number_List
+                    Multi_BOM_SAP_Number_List_Str += BOM_SAP_Number_List_Str
+                    Multi_PCBA_Part_info_list.append(PCBA_Part_info_list)
             # 去除重复项
             Multi_BOM_SAP_Number_List = list(set(Multi_BOM_SAP_Number_List))
             Multi_BOM_Info_list = list(set(Multi_BOM_Info_list))
