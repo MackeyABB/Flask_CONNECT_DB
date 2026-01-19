@@ -248,7 +248,7 @@ class Database:
         # AccessDB数据库获取表名的SQL语句
         elif dbindex == 1 or dbindex == 2: 
             DB_Type = "AccessDB"
-        print("Database Type:", DB_Type)
+        # print("Database Type:", DB_Type)
 
         # 仅需要单独判断是搜索某个表还是所有表
         # if not search all, search specified table
@@ -295,7 +295,7 @@ class Database:
             order_by_field="PartNumber",
             order="ASC"
         )
-        print("Generated SQL:\n", final_sql)
+        # print("Generated SQL:\n", final_sql)
         self.cursor.execute(final_sql)
         columnNameList = [column[0] for column in self.cursor.description]
         sql_result = self.cursor.fetchall()
@@ -303,8 +303,9 @@ class Database:
         return sql_result, columnNameList
         
     def openAcc(self):
-        MDB="C:\inetpub\wwwroot\db\#PrJRcd.mdb"
-        connStr="DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ="+MDB+";PWD=ABBabbELE;"
+        MDB=r"C:\inetpub\wwwroot\db\#PrJRcd.mdb"    # 此目录需要特殊权限才能访问，调试或运行时请注意，权限不足会报错，如pypyodbc.ProgrammingError: ('42000', '[42000] [Microsoft][ODBC Microsoft Access Driver] Not a valid password.')
+        # MDB=r"C:\Temp\#PrJRcd.mdb"  # 测试用临时目录
+        connStr = f"DRIVER={{Microsoft Access Driver (*.mdb, *.accdb)}};DBQ={MDB};PWD=ABBabbELE;"
         try:
             self.conn = pypyodbc.connect(connStr, timeout=20, readonly=True)
             self.cursor = self.conn.cursor()
