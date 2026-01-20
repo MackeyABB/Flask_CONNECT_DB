@@ -502,7 +502,21 @@ def AVLHandle():
         elif btn == 'Compare_AVL':
             debug_print("="*30)
             debug_print("Compare_AVL button clicked. Start processing...")
-
+            # step1: 准备工作,处理输入参数
+            # 判断excel_file是否为空
+            if not excel_file:
+                msg_avlHandle = "Please upload an Excel file for AVL comparison."
+                return jsonify({
+                    'status': 'error', 
+                    'msg': msg_avlHandle,
+                    'btn_enabled': btn_enabled
+                })
+            # 保存上传的Excel文件到临时路径
+            temp_dir = tempfile.gettempdir()
+            uploaded_file_path = os.path.join(temp_dir, secure_filename(excel_file.filename))
+            excel_file.save(uploaded_file_path)
+            debug_print("Uploaded Excel file saved to:", uploaded_file_path)
+            
             debug_print("Compare AVL successfully.")
             msg_avlHandle = "Create AVL button processing completed. If the save dialog did not pop up, please click the Download_Result button."
         # 处理Download Result按钮点击事件
