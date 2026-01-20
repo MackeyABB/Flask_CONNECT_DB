@@ -8,6 +8,9 @@ Notes:
 Revision log:
 1.0.0 - 20260117: 初始版本，实现基本功能。
 1.1.0 - 20260120: 添加compare_avl_sheets函数,用于对比AVL和AVL_Cmp两个sheet的数据
+1.1.1 - 20260120: 修复compare_avl_sheets函数中AVL表E-T列跨分组匹配逻辑错误(顺序不同被标为红色的问题)
+            正确的需求是只要AVL当前分组(如EF)在 AVL_Cmp 的所有分组集合中出现（无论顺序/位置），就应标为绿底，否则红底。
+            同时测试代码输出文件名增加时间戳，避免覆盖。
 '''
 
 
@@ -16,9 +19,10 @@ Revision log:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__revision__ = '1.1.0'
+__revision__ = '1.1.1'
 
 
+import datetime
 import os
 import openpyxl
 from openpyxl.styles import PatternFill
@@ -257,28 +261,17 @@ def compare_avl_sheets(file_path, output_path):
             cell1 = ws_avl[f"{col1}{avl_row_num}"]
             cell2 = ws_avl[f"{col2}{avl_row_num}"]
 
-            # 优先判断：无对应B列 → 蓝色（修复问题1）
+            # 无对应B列 → 蓝色
             if cmp_row is None:
                 cell1.fill = blue_fill
                 cell2.fill = blue_fill
                 continue
 
-            # 有对应B列：先检查AVL分组值是否存在于Cmp当前行的所有分组中
+            # 只要分组值存在于Cmp当前行的所有分组中（无论顺序/位置），就绿底，否则红底
             if avl_group_val in cmp_row["group_values"]:
-                # 存在：再判断是否同位置匹配
-                cmp_val1 = cmp_row["col_data"].get(col1, None)
-                cmp_val2 = cmp_row["col_data"].get(col2, None)
-                cmp_group_val = f"{cmp_val1}|{cmp_val2}"
-                if avl_group_val == cmp_group_val:
-                    # 同位置匹配 → 绿色
-                    cell1.fill = green_fill
-                    cell2.fill = green_fill
-                else:
-                    # 跨位置匹配（存在但不同位置）→ 红色（可根据需求调整）
-                    cell1.fill = red_fill
-                    cell2.fill = red_fill
+                cell1.fill = green_fill
+                cell2.fill = green_fill
             else:
-                # 不存在于Cmp当前行的分组中 → 红色
                 cell1.fill = red_fill
                 cell2.fill = red_fill
 
@@ -329,6 +322,8 @@ if __name__ == "__main__":
     
     # 基于脚本目录构建文件路径
     input_file = os.path.join(script_dir, "AVL_Cmp_Same_List_Example.xlsx")
-    output_file = os.path.join(script_dir, "AVL_Cmp_Same_List_Example_compared.xlsx")
+    # 输出文件名要增加日期时间戳，避免覆盖
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_file = os.path.join(script_dir, f"AVL_Cmp_Same_List_Example_compared_{timestamp}.xlsx")  
     
     compare_avl_sheets(input_file, output_file)
