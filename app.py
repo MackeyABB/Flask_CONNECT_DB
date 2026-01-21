@@ -33,6 +33,7 @@ Revision History:
 3.3.2 - 20260119: 修正CONNECT Viewer页面中的SAP Number List Search功能的bug
             当SAP编号未找到时,会进行判断，并添加空行占位,填写SAP number
 3.4.0 - 20260119: "Download_AVL"按键实现下载功能
+3.5.0 - 20260121: 增加AVL Comparison功能,支持上传手动整理的AVL文件进行对比,并生成对比结果Excel文件供下载。此功能暂时不支持自动生成AVL_Cmp sheet,需要用户手动整理后上传进行对比。临时版本号提升为3.5.0,等待后续完善自动生成AVL_Cmp sheet功能。
 '''
 
 # 版本号
@@ -40,7 +41,7 @@ Revision History:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.4.0"
+__Version__ = "3.5.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -66,6 +67,7 @@ import os
 
 # Global Variables
 first_AVL_Output_File = ""  # Excel输出文件路径
+AVL_Compare_Output_File = ""  # AVL比较输出文件路径
 
 # debug print, print到控制台
 DEBUG_PRINT = True
@@ -340,7 +342,8 @@ def AVLHandle():
     if request.method == 'POST':
         # 处理POST请求
         # 定义全局变量
-        global first_AVL_Output_File  # 声明为全局变量, 可以其它函数访问
+        global first_AVL_Output_File  # 声明为全局变量, 第一次生成的AVL Excel文件路径
+        global AVL_Compare_Output_File  # 声明为全局变量, 对比后的AVL Excel文件路径
         # 获取public部分设置
         user = request.form.get('user')
         pwd = request.form.get('password')
@@ -502,6 +505,49 @@ def AVLHandle():
         elif btn == 'Compare_AVL':
             debug_print("="*30)
             debug_print("Compare_AVL button clicked. Start processing...")
+            # step1: 准备工作,处理输入参数
+            # 判断excel_file是否为空
+            if not excel_file:
+                msg_avlHandle = "Please upload an Excel file for AVL comparison."
+                return jsonify({
+                    'status': 'error', 
+                    'msg': msg_avlHandle,
+                    'btn_enabled': btn_enabled
+                })
+            # 保存上传的Excel文件到临时路径
+            temp_dir = tempfile.gettempdir()
+            uploaded_file = os.path.join(temp_dir, secure_filename(excel_file.filename))
+            excel_file.save(uploaded_file)
+            debug_print("Uploaded Excel file saved to:", uploaded_file)
+            # todo2: todo1实现需要时间，可以先实现手动整理比较的AVL文件，然后上传进行比较 -> 先实现手动上传比较功能，等待后续完善自动生成AVL_Cmp sheet功能
+            # 输出文件路径 
+            AVL_Compare_Output_File = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', f"AVL_Compare_Result_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
+            excel_handle.compare_avl_sheets(uploaded_file, AVL_Compare_Output_File)
+            msg_avlHandle = "Compare AVL button processing completed. If the save dialog did not pop up, please click the Download_Result button."
+            # AJAX方式下载文件
+            return download_excel(AVL_Compare_Output_File, AJAX=True, msg_avlHandle=msg_avlHandle, btn_enabled=True)
+
+
+
+            # step2: 根据Compare范围, 连接数据库生成AVL_Cmp sheet
+            debug_print("Starting to create AVL_Cmp sheet...")
+
+
+            # Excel模板路径
+            template_file = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),  '2TFP900033A1076.xlsx')
+            # todo: 1. 根据AVL_Cmp_range选择不同的处理方式, 生成AVL_Cmp sheet
+            # 选项1: AVL Sheet Only, 获取上传文件中的AVL sheet内容，然后根据B列第7行开始的Part Numbers查询数据库，生成AVL_Cmp sheet
+            if AVL_Cmp_range == 'AVL_Sheet_Only':
+                pass
+            # 选项2: BOM Related sheet,  获取上传文件中的BOM Related sheet内容，然后根据B列第3行开始的PCBA Part Numbers查询PLM获取BOM，然后根据BOM中的SAP Numbers查询数据库，生成AVL_Cmp sheet
+            elif AVL_Cmp_range == 'BOM_Related_Sheet':
+                # 此部分的功能与Create AVL部分类似, 需要重构代码以便复用
+                pass
+
+            # 
+            # 调用Excel处理模块,生成AVL Comparison Excel文件, 结果直接输出到output_file
+
+
 
             debug_print("Compare AVL successfully.")
             msg_avlHandle = "Create AVL button processing completed. If the save dialog did not pop up, please click the Download_Result button."
