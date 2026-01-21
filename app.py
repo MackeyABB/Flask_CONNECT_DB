@@ -37,6 +37,9 @@ Revision History:
 3.6.0 - 20260121: 增加Compare_Manual_AVL按键, 用于上传手动整理的AVL文件进行对比,并生成对比结果Excel文件供下载。
 3.7.0 - 20260121: 实现Compare_AVL按键的AVL_Sheet_Only功能,根据上传Excel文件中的"AVL" sheet内容,查询数据库获取ordering information,并与"AVL" sheet内容进行对比,生成对比结果Excel文件供下载。
             输出文件命名规则调整为: 原文件名_时间戳.xlsx, 方便区分不同的对比结果文件。
+3.8.0 - 20260121: 实现Compare_AVL按键的BOM_Related_Sheet功能
+            根据上传Excel文件中的"BOM Related" sheet内容,获取PCBA Part Numbers列表,通过PLM获取BOM中的SAP Numbers,查询数据库获取ordering information,并与"BOM Related" sheet中的AVL内容进行对比,生成对比结果Excel文件供下载。
+            此部分代码是可以跟Create AVL部分代码进行重构复用的, 但是为了避免影响已经稳定运行的Create AVL功能, 暂时不进行重构。
 '''
 
 # 版本号
@@ -44,7 +47,7 @@ Revision History:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.7.0"
+__Version__ = "3.8.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -626,9 +629,68 @@ def AVLHandle():
                 )   # Multi_BOM_Info_list为空也不会出错
             # 选项2: BOM Related sheet,  获取上传文件中的BOM Related sheet内容，然后根据B列第3行开始的PCBA Part Numbers查询PLM获取BOM，然后根据BOM中的SAP Numbers查询数据库，生成AVL_Cmp sheet
             elif AVL_Cmp_range == 'BOM_Related_Sheet':
-                # 此部分的功能与Create AVL部分类似, 需要重构代码以便复用
-                pass
-
+                # 此部分的功能与Create AVL部分类似, 但是没有重构
+                # Step B1: 从upload file中获取PCBA Part Numbers列表
+                PCBA_Part_Number_List = excel_handle.get_PCBA_Part_Numbers_from_BOM_Related_sheet(uploaded_file)
+                # 以下部分直接从Create AVL中复制过来, 需要重构
+                # 处理AVL_include选项
+                bCHINA_PN_ONLY = True if AVL_include == '2TFU CN only' else False
+                # 变量定义
+                Multi_BOM_Info_list = []    # PartNumber,PartName,Quantity,DesignatorRange
+                Multi_BOM_SAP_Number_List = []  # SAP Number list in the BOM
+                Multi_BOM_SAP_Number_List_Str = ""  # SAP Number list in the BOM, str format
+                Multi_PCBA_Part_info_list = []  # PCBA Part info list
+                # Step2: 连接PLM,获取BOM信息
+                debug_print("Starting to get BOM from PLM...")
+                for BOM_number in PCBA_Part_Number_List:
+                    print("Processing PCBA Part Number:", BOM_number)
+                    BOM_Info_list, BOM_SAP_Number_List, BOM_SAP_Number_List_Str, PCBA_Part_info_list, PLM_Login_OK = plm.get_BOM(user, pwd, BOM_number, bCHINA_PN_ONLY)
+                    if not PLM_Login_OK:
+                        debug_print(f"Failed to login to Windchill for PCBA Part Number: {BOM_number}")
+                        msg_avlHandle = "Failed to login to Windchill. Please check your username, password and network connection."
+                        return jsonify({
+                            'status': 'error', 
+                            'msg': msg_avlHandle,
+                            'btn_enabled': btn_enabled
+                        })
+                    else:
+                        debug_print(f"BOM Info for {BOM_number} retrieved successfully.")
+                        Multi_BOM_Info_list += BOM_Info_list
+                        Multi_BOM_SAP_Number_List += BOM_SAP_Number_List
+                        Multi_BOM_SAP_Number_List_Str += BOM_SAP_Number_List_Str
+                        Multi_PCBA_Part_info_list.append(PCBA_Part_info_list)
+                # 去除重复项
+                Multi_BOM_SAP_Number_List = list(set(Multi_BOM_SAP_Number_List))
+                Multi_BOM_Info_list = list(set(Multi_BOM_Info_list))
+                # Step3: 通过SQL获取ordering information
+                debug_print("Starting to get ordering info from DB...")
+                tableName = '---All----' #检索所有表
+                dbindex = int(DB_Select)    #0: CONNECT DB, 1: Access DB
+                # 打开DB
+                bIsDBOpen = db.openDB(dbindex, db_mgt.DBList, app)
+                if bIsDBOpen == True:
+                    flash(db_mgt.DBList[dbindex]+" 打开数据库成功！")
+                else:
+                    flash(db_mgt.DBList[dbindex]+" 打开数据库出错")
+                    return jsonify({
+                        'status': 'error',
+                        'msg': "Failed to open the selected database.",
+                        'btn_enabled': btn_enabled
+                    })
+                # 调用重构后的函数，获取ordering information
+                sql_result, columnNameList = get_ordering_info_from_db(
+                    db, dbindex, tableName, Multi_BOM_SAP_Number_List, Multi_BOM_Info_list
+                )
+                # 判断是否有查询到数据，若没有则不继续处理，并提示用户
+                sql_result_len = len(sql_result)
+                if sql_result_len == 0:
+                    msg_avlHandle = "No ordering information found for the given PCBA Part Numbers' BOM SAP Numbers."
+                    return jsonify({
+                        'status': 'error', 
+                        'msg': msg_avlHandle,
+                        'btn_enabled': btn_enabled
+                    })
+            # 以下部分为通用部分
             # Step 3： 输出AVL Comparison Excel文件
             # 判断是否有查询到数据，若没有则不继续处理，并提示用户
             # 不需要，因为SAP Numbers已经判断过了
