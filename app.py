@@ -508,7 +508,6 @@ def AVLHandle():
             msg_avlHandle = "Create AVL button processing completed. If the save dialog did not pop up, please click the Download_AVL button."
             # AJAX方式下载文件
             return download_excel(first_AVL_Output_File, AJAX=True, msg_avlHandle=msg_avlHandle, btn_enabled=True)
-
         # 处理Download AVL按钮点击事件
         elif btn == 'Download_AVL':
             debug_print("="*30)

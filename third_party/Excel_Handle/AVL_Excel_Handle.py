@@ -209,7 +209,7 @@ def compare_avl_sheets(file_path, output_path):
     # 定义填充颜色（RGB值）
     green_fill = PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")  # 绿色：值相同/存在且匹配
     red_fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")    # 红色：值不同/存在但不匹配
-    blue_fill = PatternFill(start_color="0000FF", end_color="0000FF", fill_type="solid")    # 蓝色：AVL有，AVL_Cmp无（无对应B列）
+    blue_fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")    # 浅蓝色：AVL有，AVL_Cmp无（无对应B列）
     yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")  # 黄色：AVL_Cmp有，AVL无
     orange_fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")  # 橙色：AVL_Cmp新part
 
