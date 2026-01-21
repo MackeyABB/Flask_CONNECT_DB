@@ -34,6 +34,7 @@ Revision History:
             当SAP编号未找到时,会进行判断，并添加空行占位,填写SAP number
 3.4.0 - 20260119: "Download_AVL"按键实现下载功能
 3.5.0 - 20260121: 增加AVL Comparison功能,支持上传手动整理的AVL文件进行对比,并生成对比结果Excel文件供下载。此功能暂时不支持自动生成AVL_Cmp sheet,需要用户手动整理后上传进行对比。临时版本号提升为3.5.0,等待后续完善自动生成AVL_Cmp sheet功能。
+3.6.0 - 20260121: 增加Compare_Manual_AVL按键, 用于上传手动整理的AVL文件进行对比,并生成对比结果Excel文件供下载。
 '''
 
 # 版本号
@@ -41,7 +42,7 @@ Revision History:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.5.0"
+__Version__ = "3.6.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -501,6 +502,39 @@ def AVLHandle():
             debug_print("Download AVL successfully.")
             msg_avlHandle = "Download_AVL button processing completed."
             return download_excel(first_AVL_Output_File, AJAX=True, msg_avlHandle=msg_avlHandle, btn_enabled=True)
+        # 处理Manual Compare AVL按钮点击事件
+        elif btn == 'Compare_Manual_AVL':
+            debug_print("="*30)
+            debug_print("Compare_Manual_AVL button clicked. Start processing...")
+            # step1: 准备工作,处理输入参数
+            # 判断excel_file是否为空
+            if not excel_file:
+                msg_avlHandle = "Please upload an Excel file for AVL comparison."
+                return jsonify({
+                    'status': 'error', 
+                    'msg': msg_avlHandle,
+                    'btn_enabled': btn_enabled
+                })
+            # 保存上传的Excel文件到临时路径
+            temp_dir = tempfile.gettempdir()
+            uploaded_file = os.path.join(temp_dir, secure_filename(excel_file.filename))
+            excel_file.save(uploaded_file)
+            debug_print("Uploaded Excel file saved to:", uploaded_file)
+            # 判断Excel文件中是否包含"AVL"和"AVL_Cmp"两个sheet
+            required_sheets = excel_handle.AVL_MANUAL_REQUIRED_SHEETS
+            if not excel_handle.check_AVL_file(uploaded_file, required_sheets):
+                msg_avlHandle = f"The uploaded Excel file must contain the following sheets: {', '.join(required_sheets)}."
+                return jsonify({
+                    'status': 'error', 
+                    'msg': msg_avlHandle,
+                    'btn_enabled': btn_enabled
+                })
+            # 输出文件路径 
+            AVL_Compare_Output_File = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', f"AVL_Compare_Result_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
+            excel_handle.compare_avl_sheets(uploaded_file, AVL_Compare_Output_File)
+            msg_avlHandle = "Compare Manual AVL button processing completed. If the save dialog did not pop up, please click the Download_Result button."
+            # AJAX方式下载文件
+            return download_excel(AVL_Compare_Output_File, AJAX=True, msg_avlHandle=msg_avlHandle, btn_enabled=True)
         # 处理Compare AVL按钮点击事件
         elif btn == 'Compare_AVL':
             debug_print("="*30)

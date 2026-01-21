@@ -11,6 +11,12 @@ Revision log:
 1.1.1 - 20260120: 修复compare_avl_sheets函数中AVL表E-T列跨分组匹配逻辑错误(顺序不同被标为红色的问题)
             正确的需求是只要AVL当前分组(如EF)在 AVL_Cmp 的所有分组集合中出现（无论顺序/位置），就应标为绿底，否则红底。
             同时测试代码输出文件名增加时间戳，避免覆盖。
+1.2.0 - 20260121: 增加check_AVL_file()函数, 用于检查AVL Excel文件的有效性。
+            
+
+
+
+
 '''
 
 
@@ -19,7 +25,7 @@ Revision log:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__revision__ = '1.1.1'
+__revision__ = '1.2.0'
 
 
 import datetime
@@ -314,6 +320,29 @@ def compare_avl_sheets(file_path, output_path):
     # 保存结果
     wb.save(output_path)
     print(f"对比完成！结果已保存至: {output_path}")
+
+
+AVL_MANUAL_REQUIRED_SHEETS = ["AVL", "AVL_Cmp"] # 手动整理的AVL对比所需工作表
+AVL_AUTO_REQUIRED_SHEETS = ["AVL"] # 自动整理的AVL所需工作表
+def check_AVL_file(file_path, required_sheets=["AVL", "AVL_Cmp"]):
+    """
+    检查AVL Excel文件的有效性。
+    Args:
+        param file_path (str): 输入Excel文件路径
+    return:
+        bool: 文件有效返回True，否则返回False
+    """
+    try:
+        wb = openpyxl.load_workbook(file_path)
+        # 检查是否包含所需的工作表
+        for sheet in required_sheets:
+            if sheet not in wb.sheetnames:
+                print(f"缺少必要的工作表: {sheet}")
+                return False
+        return True
+    except Exception as e:
+        print(f"无法打开文件或文件格式错误: {e}")
+        return False
 
 # 主程序执行
 if __name__ == "__main__":
