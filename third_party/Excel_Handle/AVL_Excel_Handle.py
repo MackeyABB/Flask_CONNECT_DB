@@ -32,6 +32,7 @@ import datetime
 import os
 import openpyxl
 from openpyxl.styles import PatternFill
+import copy
 
 # Excel列与sql_result索引的对应关系
 # sql result索引关系见third_party\PyPika_CONNECT\PyPika\PyPika_CONNECT.py中的FIELDS_SAPMaxDB， FIELDS_AccessDB
@@ -105,6 +106,46 @@ def first_write_AVL_to_excel(template_file, sql_result, Multi_PCBA_Part_info_lis
     # 保存输出文件
     wb.save(output_excel_file)  
 
+def copy_AVL_to_AVL_Cmp_In_UploadFile(db_search_result_file_path, upload_AVL_file_path):
+    """
+    复制db_search_result_file_path Excel 文件中的AVL工作表到upload_AVL_file_path的AVL_Cmp工作表。
+    Args:
+        db_search_result_file_path(str): 输入Excel文件路径
+        upload_AVL_file_path (str): 输出Excel文件路径
+    return:
+        None: upload_AVL_file_path文件中新增AVL_Cmp工作表，内容与db_search_result_file_path文件中的AVL工作表相同
+    """
+    # 加载源文件和目标文件
+    wb_source = openpyxl.load_workbook(db_search_result_file_path)
+    wb_target = openpyxl.load_workbook(upload_AVL_file_path)
+
+    # 获取AVL工作表
+    ws_source_avl = wb_source["AVL"]
+
+    # 在目标文件中创建AVL_Cmp工作表
+    if "AVL_Cmp" in wb_target.sheetnames:
+        ws_target_avl_cmp = wb_target["AVL_Cmp"]
+        wb_target.remove(ws_target_avl_cmp)
+    ws_target_avl_cmp = wb_target.create_sheet("AVL_Cmp")
+
+    # 复制内容和样式
+    for i, row in enumerate(ws_source_avl.iter_rows()):
+        for j, cell in enumerate(row):
+            new_cell = ws_target_avl_cmp.cell(row=i+1, column=j+1, value=cell.value)
+            if cell.has_style:
+                new_cell.font = copy.copy(cell.font)
+                new_cell.border = copy.copy(cell.border)
+                new_cell.fill = copy.copy(cell.fill)
+                new_cell.number_format = cell.number_format
+                new_cell.protection = copy.copy(cell.protection)
+                new_cell.alignment = copy.copy(cell.alignment)
+
+    # 复制合并单元格
+    for merged_range in ws_source_avl.merged_cells.ranges:
+        ws_target_avl_cmp.merge_cells(str(merged_range))
+
+    # 保存目标文件
+    wb_target.save(upload_AVL_file_path)    
     
 
 
@@ -115,7 +156,7 @@ def compare_avl_sheets(file_path, output_path):
         param file_path (str): 输入Excel文件路径，包含AVL和AVL_Cmp两个sheet
         param output_path (str): 输出Excel文件路径，保存标注后的结果
     return:
-        None
+        None: 结果保存至output_path文件中
     note:
         标注规则：
         1. 对于C/S/T列，直接比较两个sheet对应单元格的值：
