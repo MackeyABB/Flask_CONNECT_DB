@@ -323,6 +323,44 @@ def download_excel(output_excel_file, AJAX=False, msg_avlHandle="", btn_enabled=
         response_file = send_file(output_excel_file, as_attachment=True)
         return response_file
 
+def get_ordering_info_from_db(db, dbindex, tableName, SAP_Number_List, Multi_BOM_Info_list):
+    """ 根据SAP编号列表,查询数据库,返回sql_result和columnNameList
+    Args:
+        db(db_mgt.Database): 数据库实例
+        dbindex(int): 数据库索引
+        tableName(str): 表名
+        SAP_Number_List(list): SAP编号列表
+        Multi_BOM_Info_list(list): BOM信息列表,用于查不到信息时, 获取SAP Description以便填写
+
+    Returns:
+        tuple: (sql_result, columnNameList): 查询结果和列名列表
+    """
+    sql_result = []
+    columnNameList = None
+    for SAPNo_Searchby in SAP_Number_List:
+        sql_result_each, columnNameList = db.fetch(
+            tableName=tableName, 
+            dbindex=dbindex, 
+            PartNo_Searchby='',
+            SAPNo_Searchby=SAPNo_Searchby,
+            PartValue_Searchby='',
+            MfcPartNum_Searchby='',
+            Description_Searchby='',
+            TechDescription_Searchby='',
+            Editor_Searchby=''
+        )
+        if sql_result_each:
+            sql_result.append(sql_result_each[0])
+        else:
+            # 未找到结果, 添加空行占位,填写SAP number和Description
+            SAP_Description_Searchby = ""
+            for bom_info in Multi_BOM_Info_list:
+                if bom_info.split(',')[0] == SAPNo_Searchby:
+                    SAP_Description_Searchby = bom_info.split(',')[1]
+                    break
+            Not_Found_SAP_info = ('','', SAPNo_Searchby, SAP_Description_Searchby)
+            sql_result.append(Not_Found_SAP_info)
+    return sql_result, columnNameList
 
 # 通过URL跳转的方式下载Excel文件
 @app.route('/downloadExcelFile/<filename>')
@@ -428,7 +466,6 @@ def AVLHandle():
             Multi_BOM_Info_list = list(set(Multi_BOM_Info_list))
             # Step3: 通过SQL获取ordering information
             debug_print("Starting to get ordering info from DB...")
-            sql_result = []
             tableName = '---All----' #检索所有表
             dbindex = int(DB_Select)    #0: CONNECT DB, 1: Access DB
             # 打开DB
@@ -442,32 +479,10 @@ def AVLHandle():
                     'msg': "Failed to open the selected database.",
                     'btn_enabled': btn_enabled
                 })
-             # 遍历所有SAP编号,逐个查询, 获得每个SAP编号的ordering information，并保存在sql_result中
-            for SAPNo_Searchby in Multi_BOM_SAP_Number_List:
-                sql_result_each, columnNameList = db.fetch(
-                    tableName=tableName, 
-                    dbindex=dbindex, 
-                    PartNo_Searchby='',
-                    SAPNo_Searchby=SAPNo_Searchby,
-                    PartValue_Searchby='',
-                    MfcPartNum_Searchby='',
-                    Description_Searchby='',
-                    TechDescription_Searchby='',
-                    Editor_Searchby=''
-                    )
-                if sql_result_each: # 非空结果才添加
-                    sql_result.append(sql_result_each[0])
-                else: # 未找到结果, 添加空行占位,填写SAP number和description, 以便后续Excel处理
-                    SAP_Description_Searchby = ""  # 默认空
-                    # 从Multi_BOM_Info_list中获取SAP_Description
-                    # todo: SAP description在Multi_BOM_Info_list的第二个元素中
-                    for bom_info in Multi_BOM_Info_list:
-                        if bom_info.split(',')[0] == SAPNo_Searchby:
-                            SAP_Description_Searchby = bom_info.split(',')[1]
-                            break
-                    # 数据类型为set
-                    Not_Found_SAP_info = ('','', SAPNo_Searchby, SAP_Description_Searchby)
-                    sql_result.append(Not_Found_SAP_info)
+            # 调用重构后的函数，获取ordering information
+            sql_result, columnNameList = get_ordering_info_from_db(
+                db, dbindex, tableName, Multi_BOM_SAP_Number_List, Multi_BOM_Info_list
+            )
             # 判断是否有查询到数据，若没有则不继续处理，并提示用户
             sql_result_len = len(sql_result)
             if sql_result_len == 0:
