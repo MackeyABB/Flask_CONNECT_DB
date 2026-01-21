@@ -34,6 +34,12 @@ Revision History:
             当SAP编号未找到时,会进行判断，并添加空行占位,填写SAP number
 3.4.0 - 20260119: "Download_AVL"按键实现下载功能
 3.5.0 - 20260121: 增加AVL Comparison功能,支持上传手动整理的AVL文件进行对比,并生成对比结果Excel文件供下载。此功能暂时不支持自动生成AVL_Cmp sheet,需要用户手动整理后上传进行对比。临时版本号提升为3.5.0,等待后续完善自动生成AVL_Cmp sheet功能。
+3.6.0 - 20260121: 增加Compare_Manual_AVL按键, 用于上传手动整理的AVL文件进行对比,并生成对比结果Excel文件供下载。
+3.7.0 - 20260121: 实现Compare_AVL按键的AVL_Sheet_Only功能,根据上传Excel文件中的"AVL" sheet内容,查询数据库获取ordering information,并与"AVL" sheet内容进行对比,生成对比结果Excel文件供下载。
+            输出文件命名规则调整为: 原文件名_时间戳.xlsx, 方便区分不同的对比结果文件。
+3.8.0 - 20260121: 实现Compare_AVL按键的BOM_Related_Sheet功能
+            根据上传Excel文件中的"BOM Related" sheet内容,获取PCBA Part Numbers列表,通过PLM获取BOM中的SAP Numbers,查询数据库获取ordering information,并与"BOM Related" sheet中的AVL内容进行对比,生成对比结果Excel文件供下载。
+            此部分代码是可以跟Create AVL部分代码进行重构复用的, 但是为了避免影响已经稳定运行的Create AVL功能, 暂时不进行重构。
 '''
 
 # 版本号
@@ -41,7 +47,7 @@ Revision History:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.5.0"
+__Version__ = "3.8.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -322,6 +328,44 @@ def download_excel(output_excel_file, AJAX=False, msg_avlHandle="", btn_enabled=
         response_file = send_file(output_excel_file, as_attachment=True)
         return response_file
 
+def get_ordering_info_from_db(db, dbindex, tableName, SAP_Number_List, Multi_BOM_Info_list):
+    """ 根据SAP编号列表,查询数据库,返回sql_result和columnNameList
+    Args:
+        db(db_mgt.Database): 数据库实例
+        dbindex(int): 数据库索引
+        tableName(str): 表名
+        SAP_Number_List(list): SAP编号列表
+        Multi_BOM_Info_list(list): BOM信息列表,用于查不到信息时, 获取SAP Description以便填写; 为空也不会出错
+
+    Returns:
+        tuple: (sql_result, columnNameList): 查询结果和列名列表
+    """
+    sql_result = []
+    columnNameList = None
+    for SAPNo_Searchby in SAP_Number_List:
+        sql_result_each, columnNameList = db.fetch(
+            tableName=tableName, 
+            dbindex=dbindex, 
+            PartNo_Searchby='',
+            SAPNo_Searchby=SAPNo_Searchby,
+            PartValue_Searchby='',
+            MfcPartNum_Searchby='',
+            Description_Searchby='',
+            TechDescription_Searchby='',
+            Editor_Searchby=''
+        )
+        if sql_result_each:
+            sql_result.append(sql_result_each[0])
+        else:
+            # 未找到结果, 添加空行占位,填写SAP number和Description
+            SAP_Description_Searchby = ""
+            for bom_info in Multi_BOM_Info_list:
+                if bom_info.split(',')[0] == SAPNo_Searchby:
+                    SAP_Description_Searchby = bom_info.split(',')[1]
+                    break
+            Not_Found_SAP_info = ('','', SAPNo_Searchby, SAP_Description_Searchby)
+            sql_result.append(Not_Found_SAP_info)
+    return sql_result, columnNameList
 
 # 通过URL跳转的方式下载Excel文件
 @app.route('/downloadExcelFile/<filename>')
@@ -427,7 +471,6 @@ def AVLHandle():
             Multi_BOM_Info_list = list(set(Multi_BOM_Info_list))
             # Step3: 通过SQL获取ordering information
             debug_print("Starting to get ordering info from DB...")
-            sql_result = []
             tableName = '---All----' #检索所有表
             dbindex = int(DB_Select)    #0: CONNECT DB, 1: Access DB
             # 打开DB
@@ -436,32 +479,15 @@ def AVLHandle():
                 flash(db_mgt.DBList[dbindex]+" 打开数据库成功！")
             else:
                 flash(db_mgt.DBList[dbindex]+" 打开数据库出错")
-             # 遍历所有SAP编号,逐个查询, 获得每个SAP编号的ordering information，并保存在sql_result中
-            for SAPNo_Searchby in Multi_BOM_SAP_Number_List:
-                sql_result_each, columnNameList = db.fetch(
-                    tableName=tableName, 
-                    dbindex=dbindex, 
-                    PartNo_Searchby='',
-                    SAPNo_Searchby=SAPNo_Searchby,
-                    PartValue_Searchby='',
-                    MfcPartNum_Searchby='',
-                    Description_Searchby='',
-                    TechDescription_Searchby='',
-                    Editor_Searchby=''
-                    )
-                if sql_result_each: # 非空结果才添加
-                    sql_result.append(sql_result_each[0])
-                else: # 未找到结果, 添加空行占位,填写SAP number和description, 以便后续Excel处理
-                    SAP_Description_Searchby = ""  # 默认空
-                    # 从Multi_BOM_Info_list中获取SAP_Description
-                    # todo: SAP description在Multi_BOM_Info_list的第二个元素中
-                    for bom_info in Multi_BOM_Info_list:
-                        if bom_info.split(',')[0] == SAPNo_Searchby:
-                            SAP_Description_Searchby = bom_info.split(',')[1]
-                            break
-                    # 数据类型为set
-                    Not_Found_SAP_info = ('','', SAPNo_Searchby, SAP_Description_Searchby)
-                    sql_result.append(Not_Found_SAP_info)
+                return jsonify({
+                    'status': 'error',
+                    'msg': "Failed to open the selected database.",
+                    'btn_enabled': btn_enabled
+                })
+            # 调用重构后的函数，获取ordering information
+            sql_result, columnNameList = get_ordering_info_from_db(
+                db, dbindex, tableName, Multi_BOM_SAP_Number_List, Multi_BOM_Info_list
+            )
             # 判断是否有查询到数据，若没有则不继续处理，并提示用户
             sql_result_len = len(sql_result)
             if sql_result_len == 0:
@@ -485,7 +511,6 @@ def AVLHandle():
             msg_avlHandle = "Create AVL button processing completed. If the save dialog did not pop up, please click the Download_AVL button."
             # AJAX方式下载文件
             return download_excel(first_AVL_Output_File, AJAX=True, msg_avlHandle=msg_avlHandle, btn_enabled=True)
-
         # 处理Download AVL按钮点击事件
         elif btn == 'Download_AVL':
             debug_print("="*30)
@@ -501,6 +526,41 @@ def AVLHandle():
             debug_print("Download AVL successfully.")
             msg_avlHandle = "Download_AVL button processing completed."
             return download_excel(first_AVL_Output_File, AJAX=True, msg_avlHandle=msg_avlHandle, btn_enabled=True)
+        # 处理Manual Compare AVL按钮点击事件
+        elif btn == 'Compare_Manual_AVL':
+            debug_print("="*30)
+            debug_print("Compare_Manual_AVL button clicked. Start processing...")
+            # step1: 准备工作,处理输入参数
+            # 判断excel_file是否为空
+            if not excel_file:
+                msg_avlHandle = "Please upload an Excel file for AVL comparison."
+                return jsonify({
+                    'status': 'error', 
+                    'msg': msg_avlHandle,
+                    'btn_enabled': btn_enabled
+                })
+            # 保存上传的Excel文件到临时路径
+            temp_dir = tempfile.gettempdir()
+            filename_with_ext = secure_filename(excel_file.filename)
+            filename_no_ext = os.path.splitext(filename_with_ext)[0]
+            uploaded_file = os.path.join(temp_dir, filename_with_ext)
+            excel_file.save(uploaded_file)
+            debug_print("Uploaded Excel file saved to:", uploaded_file)
+            # 判断Excel文件中是否包含"AVL"和"AVL_Cmp"两个sheet
+            required_sheets = excel_handle.AVL_MANUAL_REQUIRED_SHEETS
+            if not excel_handle.check_AVL_file(uploaded_file, required_sheets):
+                msg_avlHandle = f"The uploaded Excel file must contain the following sheets: {', '.join(required_sheets)}."
+                return jsonify({
+                    'status': 'error', 
+                    'msg': msg_avlHandle,
+                    'btn_enabled': btn_enabled
+                })
+            # 输出文件路径 
+            AVL_Compare_Output_File = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', f"{filename_no_ext}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
+            excel_handle.compare_avl_sheets(uploaded_file, AVL_Compare_Output_File)
+            msg_avlHandle = "Compare Manual AVL button processing completed. If the save dialog did not pop up, please click the Download_Result button."
+            # AJAX方式下载文件
+            return download_excel(AVL_Compare_Output_File, AJAX=True, msg_avlHandle=msg_avlHandle, btn_enabled=True)
         # 处理Compare AVL按钮点击事件
         elif btn == 'Compare_AVL':
             debug_print("="*30)
@@ -516,48 +576,154 @@ def AVLHandle():
                 })
             # 保存上传的Excel文件到临时路径
             temp_dir = tempfile.gettempdir()
-            uploaded_file = os.path.join(temp_dir, secure_filename(excel_file.filename))
+            filename_with_ext = secure_filename(excel_file.filename)
+            filename_no_ext = os.path.splitext(filename_with_ext)[0]
+            uploaded_file = os.path.join(temp_dir, filename_with_ext)
             excel_file.save(uploaded_file)
             debug_print("Uploaded Excel file saved to:", uploaded_file)
-            # todo2: todo1实现需要时间，可以先实现手动整理比较的AVL文件，然后上传进行比较 -> 先实现手动上传比较功能，等待后续完善自动生成AVL_Cmp sheet功能
-            # 输出文件路径 
-            AVL_Compare_Output_File = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', f"AVL_Compare_Result_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
-            excel_handle.compare_avl_sheets(uploaded_file, AVL_Compare_Output_File)
-            msg_avlHandle = "Compare AVL button processing completed. If the save dialog did not pop up, please click the Download_Result button."
-            # AJAX方式下载文件
-            return download_excel(AVL_Compare_Output_File, AJAX=True, msg_avlHandle=msg_avlHandle, btn_enabled=True)
-
-
-
-            # step2: 根据Compare范围, 连接数据库生成AVL_Cmp sheet
+            # 判断Excel文件中是否包含"AVL" sheet
+            required_sheets = excel_handle.AVL_AUTO_REQUIRED_SHEETS
+            if not excel_handle.check_AVL_file(uploaded_file, required_sheets):
+                msg_avlHandle = f"The uploaded Excel file must contain the following sheet: {', '.join(required_sheets)}."
+                return jsonify({
+                    'status': 'error', 
+                    'msg': msg_avlHandle,
+                    'btn_enabled': btn_enabled
+                })
+            # step2: 根据Compare范围, 连接数据库获取sql_result
             debug_print("Starting to create AVL_Cmp sheet...")
-
-
             # Excel模板路径
             template_file = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),  '2TFP900033A1076.xlsx')
             # todo: 1. 根据AVL_Cmp_range选择不同的处理方式, 生成AVL_Cmp sheet
-            # 选项1: AVL Sheet Only, 获取上传文件中的AVL sheet内容，然后根据B列第7行开始的Part Numbers查询数据库，生成AVL_Cmp sheet
+            # 选项1: AVL Sheet Only, 获取上传文件中的AVL sheet内容，然后根据B列第7行开始的Part Numbers查询数据库，得到结果待用
             if AVL_Cmp_range == 'AVL_Sheet_Only':
-                pass
+                # Step A1: 获取SAP Numbers列表
+                SAP_Nums_List = excel_handle.get_SAP_Numbers_from_AVL_sheet(uploaded_file)
+                debug_print("SAP Numbers extracted from AVL sheet:", SAP_Nums_List)
+                debug_print("len(SAP_Nums_List):", len(SAP_Nums_List))
+                # 判断是否有SAP Numbers
+                if len(SAP_Nums_List) == 0:
+                    msg_avlHandle = "No SAP Numbers found in the uploaded AVL sheet."
+                    return jsonify({
+                        'status': 'error', 
+                        'msg': msg_avlHandle,
+                        'btn_enabled': btn_enabled
+                    })
+                # Step A2: 获取ordering information
+                debug_print("Starting to get ordering info from DB...")
+                tableName = '---All----' #检索所有表
+                dbindex = int(DB_Select)    #0: CONNECT DB, 1: Access DB
+                # 打开DB
+                bIsDBOpen = db.openDB(dbindex, db_mgt.DBList, app)
+                if bIsDBOpen == True:
+                    flash(db_mgt.DBList[dbindex]+" 打开数据库成功！")
+                else:
+                    flash(db_mgt.DBList[dbindex]+" 打开数据库出错")
+                    return jsonify({
+                        'status': 'error',
+                        'msg': "Failed to open the selected database.",
+                        'btn_enabled': btn_enabled
+                    })
+                # 调用重构后的函数，获取ordering information
+                sql_result, columnNameList = get_ordering_info_from_db(db, dbindex, tableName, SAP_Nums_List, []
+                )   # Multi_BOM_Info_list为空也不会出错
             # 选项2: BOM Related sheet,  获取上传文件中的BOM Related sheet内容，然后根据B列第3行开始的PCBA Part Numbers查询PLM获取BOM，然后根据BOM中的SAP Numbers查询数据库，生成AVL_Cmp sheet
             elif AVL_Cmp_range == 'BOM_Related_Sheet':
-                # 此部分的功能与Create AVL部分类似, 需要重构代码以便复用
-                pass
+                # 此部分的功能与Create AVL部分类似, 但是没有重构
+                # Step B1: 从upload file中获取PCBA Part Numbers列表
+                PCBA_Part_Number_List = excel_handle.get_PCBA_Part_Numbers_from_BOM_Related_sheet(uploaded_file)
+                # 以下部分直接从Create AVL中复制过来, 需要重构
+                # 处理AVL_include选项
+                bCHINA_PN_ONLY = True if AVL_include == '2TFU CN only' else False
+                # 变量定义
+                Multi_BOM_Info_list = []    # PartNumber,PartName,Quantity,DesignatorRange
+                Multi_BOM_SAP_Number_List = []  # SAP Number list in the BOM
+                Multi_BOM_SAP_Number_List_Str = ""  # SAP Number list in the BOM, str format
+                Multi_PCBA_Part_info_list = []  # PCBA Part info list
+                # Step2: 连接PLM,获取BOM信息
+                debug_print("Starting to get BOM from PLM...")
+                for BOM_number in PCBA_Part_Number_List:
+                    print("Processing PCBA Part Number:", BOM_number)
+                    BOM_Info_list, BOM_SAP_Number_List, BOM_SAP_Number_List_Str, PCBA_Part_info_list, PLM_Login_OK = plm.get_BOM(user, pwd, BOM_number, bCHINA_PN_ONLY)
+                    if not PLM_Login_OK:
+                        debug_print(f"Failed to login to Windchill for PCBA Part Number: {BOM_number}")
+                        msg_avlHandle = "Failed to login to Windchill. Please check your username, password and network connection."
+                        return jsonify({
+                            'status': 'error', 
+                            'msg': msg_avlHandle,
+                            'btn_enabled': btn_enabled
+                        })
+                    else:
+                        debug_print(f"BOM Info for {BOM_number} retrieved successfully.")
+                        Multi_BOM_Info_list += BOM_Info_list
+                        Multi_BOM_SAP_Number_List += BOM_SAP_Number_List
+                        Multi_BOM_SAP_Number_List_Str += BOM_SAP_Number_List_Str
+                        Multi_PCBA_Part_info_list.append(PCBA_Part_info_list)
+                # 去除重复项
+                Multi_BOM_SAP_Number_List = list(set(Multi_BOM_SAP_Number_List))
+                Multi_BOM_Info_list = list(set(Multi_BOM_Info_list))
+                # Step3: 通过SQL获取ordering information
+                debug_print("Starting to get ordering info from DB...")
+                tableName = '---All----' #检索所有表
+                dbindex = int(DB_Select)    #0: CONNECT DB, 1: Access DB
+                # 打开DB
+                bIsDBOpen = db.openDB(dbindex, db_mgt.DBList, app)
+                if bIsDBOpen == True:
+                    flash(db_mgt.DBList[dbindex]+" 打开数据库成功！")
+                else:
+                    flash(db_mgt.DBList[dbindex]+" 打开数据库出错")
+                    return jsonify({
+                        'status': 'error',
+                        'msg': "Failed to open the selected database.",
+                        'btn_enabled': btn_enabled
+                    })
+                # 调用重构后的函数，获取ordering information
+                sql_result, columnNameList = get_ordering_info_from_db(
+                    db, dbindex, tableName, Multi_BOM_SAP_Number_List, Multi_BOM_Info_list
+                )
+                # 判断是否有查询到数据，若没有则不继续处理，并提示用户
+                sql_result_len = len(sql_result)
+                if sql_result_len == 0:
+                    msg_avlHandle = "No ordering information found for the given PCBA Part Numbers' BOM SAP Numbers."
+                    return jsonify({
+                        'status': 'error', 
+                        'msg': msg_avlHandle,
+                        'btn_enabled': btn_enabled
+                    })
+            # 以下部分为通用部分
+            # Step 3： 输出AVL Comparison Excel文件
+            # 判断是否有查询到数据，若没有则不继续处理，并提示用户
+            # 不需要，因为SAP Numbers已经判断过了
+            debug_print("Starting to write AVL Comparison Excel file...")
+            # 输出文件路径
+            AVL_Compare_Output_File = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', f"{filename_no_ext}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
+            # 调用Excel处理模块，生成AVL Comparison Excel文件, 结果直接输出到output_file
+            # 将sql_result写入到临时文件
+            tmp_file = os.path.join(temp_dir, f"temp_sql_result_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
+            excel_handle.first_write_AVL_to_excel(template_file, sql_result, [], tmp_file)
+            # 生成包含AVL,AVL_Cmp两个sheet的Excel文件
+            excel_handle.copy_AVL_to_AVL_Cmp_In_UploadFile(tmp_file, uploaded_file)
+            # 在uploaded_file的基础上，生成AVL_Cmp结果文件
+            excel_handle.compare_avl_sheets(uploaded_file, AVL_Compare_Output_File)
 
-            # 
-            # 调用Excel处理模块,生成AVL Comparison Excel文件, 结果直接输出到output_file
-
-
-
+            # Step5: 完成操作,返回结果信息
             debug_print("Compare AVL successfully.")
             msg_avlHandle = "Create AVL button processing completed. If the save dialog did not pop up, please click the Download_Result button."
+            return download_excel(AVL_Compare_Output_File, AJAX=True, msg_avlHandle=msg_avlHandle, btn_enabled=True)
         # 处理Download Result按钮点击事件
         elif btn == 'Download_Result':
             debug_print("="*30)
             debug_print("Download_Result button clicked. Start processing...")
-
+            if not AVL_Compare_Output_File or not os.path.exists(AVL_Compare_Output_File):
+                msg_avlHandle = "AVL Comparison Excel file not found. Please click the Compare AVL button first."
+                return jsonify({
+                    'status': 'error', 
+                    'msg': msg_avlHandle,
+                    'btn_enabled': btn_enabled
+                })
             debug_print("Download Result successfully.")
             msg_avlHandle = "Download_Result button processing completed."
+            return download_excel(AVL_Compare_Output_File, AJAX=True, msg_avlHandle=msg_avlHandle, btn_enabled=True)
         # 处理未知按钮点击事件
         else:
             debug_print("="*30)

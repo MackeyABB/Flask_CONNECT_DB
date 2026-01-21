@@ -11,6 +11,13 @@ Revision log:
 1.1.1 - 20260120: 修复compare_avl_sheets函数中AVL表E-T列跨分组匹配逻辑错误(顺序不同被标为红色的问题)
             正确的需求是只要AVL当前分组(如EF)在 AVL_Cmp 的所有分组集合中出现（无论顺序/位置），就应标为绿底，否则红底。
             同时测试代码输出文件名增加时间戳，避免覆盖。
+1.2.0 - 20260121: 增加check_AVL_file()函数, 用于检查AVL Excel文件的有效性。
+1.3.0 - 20260121: 增加get_SAP_Numbers_from_AVL_sheet()函数, 用于获取AVL表中的Part列表。
+            
+
+
+
+
 '''
 
 
@@ -19,13 +26,14 @@ Revision log:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__revision__ = '1.1.1'
+__revision__ = '1.3.0'
 
 
 import datetime
 import os
 import openpyxl
 from openpyxl.styles import PatternFill
+import copy
 
 # Excel列与sql_result索引的对应关系
 # sql result索引关系见third_party\PyPika_CONNECT\PyPika\PyPika_CONNECT.py中的FIELDS_SAPMaxDB， FIELDS_AccessDB
@@ -99,8 +107,68 @@ def first_write_AVL_to_excel(template_file, sql_result, Multi_PCBA_Part_info_lis
     # 保存输出文件
     wb.save(output_excel_file)  
 
-    
+def copy_AVL_to_AVL_Cmp_In_UploadFile(db_search_result_file_path, upload_AVL_file_path):
+    """
+    复制db_search_result_file_path Excel 文件中的AVL工作表到upload_AVL_file_path的AVL_Cmp工作表。
+    Args:
+        db_search_result_file_path(str): 输入Excel文件路径
+        upload_AVL_file_path (str): 输出Excel文件路径
+    return:
+        None: upload_AVL_file_path文件中新增AVL_Cmp工作表，内容与db_search_result_file_path文件中的AVL工作表相同
+    """
+    # 加载源文件和目标文件
+    wb_source = openpyxl.load_workbook(db_search_result_file_path)
+    wb_target = openpyxl.load_workbook(upload_AVL_file_path)
 
+    # 获取AVL工作表
+    ws_source_avl = wb_source["AVL"]
+
+    # 在目标文件中创建AVL_Cmp工作表
+    if "AVL_Cmp" in wb_target.sheetnames:
+        ws_target_avl_cmp = wb_target["AVL_Cmp"]
+        wb_target.remove(ws_target_avl_cmp)
+    ws_target_avl_cmp = wb_target.create_sheet("AVL_Cmp")
+
+    # 复制内容和样式
+    for i, row in enumerate(ws_source_avl.iter_rows()):
+        for j, cell in enumerate(row):
+            new_cell = ws_target_avl_cmp.cell(row=i+1, column=j+1, value=cell.value)
+            if cell.has_style:
+                new_cell.font = copy.copy(cell.font)
+                new_cell.border = copy.copy(cell.border)
+                new_cell.fill = copy.copy(cell.fill)
+                new_cell.number_format = cell.number_format
+                new_cell.protection = copy.copy(cell.protection)
+                new_cell.alignment = copy.copy(cell.alignment)
+
+    # 复制合并单元格
+    for merged_range in ws_source_avl.merged_cells.ranges:
+        ws_target_avl_cmp.merge_cells(str(merged_range))
+
+    # 保存目标文件
+    wb_target.save(upload_AVL_file_path)    
+    
+def get_PCBA_Part_Numbers_from_BOM_Related_sheet(file_path):
+    """
+    获取BOM Related工作表中的PCBA Part Numbers列表。
+    Args:
+        file_path (str): 输入Excel文件路径
+    return:
+        PCBA_part_list (list): BOM Related工作表中的PCBA Part Numbers列表
+    """
+    PCBA_part_list = []
+    try:
+        wb = openpyxl.load_workbook(file_path)
+        ws_bom = wb["BOM Related"]
+        data_start_row = 3
+        for row in range(data_start_row, ws_bom.max_row + 1):
+            part_number = ws_bom[f"B{row}"].value
+            if part_number is not None:
+                PCBA_part_list.append(part_number)
+        return PCBA_part_list
+    except Exception as e:
+        print(f"无法获取BOM Related工作表中的PCBA Part Numbers列表: {e}")
+        return PCBA_part_list
 
 def compare_avl_sheets(file_path, output_path):
     """
@@ -109,7 +177,7 @@ def compare_avl_sheets(file_path, output_path):
         param file_path (str): 输入Excel文件路径，包含AVL和AVL_Cmp两个sheet
         param output_path (str): 输出Excel文件路径，保存标注后的结果
     return:
-        None
+        None: 结果保存至output_path文件中
     note:
         标注规则：
         1. 对于C/S/T列，直接比较两个sheet对应单元格的值：
@@ -162,11 +230,11 @@ def compare_avl_sheets(file_path, output_path):
     # 定义填充颜色（RGB值）
     green_fill = PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")  # 绿色：值相同/存在且匹配
     red_fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")    # 红色：值不同/存在但不匹配
-    blue_fill = PatternFill(start_color="0000FF", end_color="0000FF", fill_type="solid")    # 蓝色：AVL有，AVL_Cmp无（无对应B列）
+    blue_fill = PatternFill(start_color="28A6EF", end_color="28A6EF", fill_type="solid")    # 浅蓝色：AVL有，AVL_Cmp无（无对应B列）
     yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")  # 黄色：AVL_Cmp有，AVL无
     orange_fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")  # 橙色：AVL_Cmp新part
 
-    # 打开Excel文件
+    # 打开Excel文件28A6EF
     wb = openpyxl.load_workbook(file_path)
     # 获取两个工作表
     ws_avl = wb["AVL"]
@@ -315,6 +383,51 @@ def compare_avl_sheets(file_path, output_path):
     wb.save(output_path)
     print(f"对比完成！结果已保存至: {output_path}")
 
+
+AVL_MANUAL_REQUIRED_SHEETS = ["AVL", "AVL_Cmp"] # 手动整理的AVL对比所需工作表
+AVL_AUTO_REQUIRED_SHEETS = ["AVL"] # 自动整理的AVL所需工作表
+def check_AVL_file(file_path, required_sheets=["AVL", "AVL_Cmp"]):
+    """
+    检查AVL Excel文件的有效性。
+    Args:
+        param file_path (str): 输入Excel文件路径
+    return:
+        bool: 文件有效返回True，否则返回False
+    """
+    try:
+        wb = openpyxl.load_workbook(file_path)
+        # 检查是否包含所需的工作表
+        for sheet in required_sheets:
+            if sheet not in wb.sheetnames:
+                print(f"缺少必要的工作表: {sheet}")
+                return False
+        return True
+    except Exception as e:
+        print(f"无法打开文件或文件格式错误: {e}")
+        return False
+
+def get_SAP_Numbers_from_AVL_sheet(file_path):
+    """
+    获取AVL表中的Part列表。
+    Args:
+        param file_path (str): 输入Excel文件路径
+    return:
+        list: AVL表中的Part列表
+    """
+    part_list = []
+    try:
+        wb = openpyxl.load_workbook(file_path)
+        ws_avl = wb["AVL"]
+        data_start_row = 7
+        for row in range(data_start_row, ws_avl.max_row + 1):
+            b_value = ws_avl[f"B{row}"].value
+            if b_value is not None:
+                part_list.append(b_value)
+        return part_list
+    except Exception as e:
+        print(f"无法获取AVL表中的Part列表: {e}")
+        return part_list
+
 # 主程序执行
 if __name__ == "__main__":
     # 获取当前脚本所在目录
@@ -326,4 +439,10 @@ if __name__ == "__main__":
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     output_file = os.path.join(script_dir, f"AVL_Cmp_Same_List_Example_compared_{timestamp}.xlsx")  
     
-    compare_avl_sheets(input_file, output_file)
+    # compare_avl_sheets(input_file, output_file)
+
+    # debug: 获取BOM Related工作表中的PCBA Part Numbers列表
+    PCBA_Part_List = get_PCBA_Part_Numbers_from_BOM_Related_sheet(input_file)
+    print("BOM Related工作表中的PCBA Part Numbers列表:")
+    print(PCBA_Part_List)
+
