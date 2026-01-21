@@ -219,18 +219,19 @@
                 <tr>
                     <td>Compare Range</td>
                     <td>
-                        <input type="radio" id="AVL_Sheet" name="AVL_Cmp_range" value="AVL_Sheet" checked>
+                        <input type="radio" id="AVL_Sheet" name="AVL_Cmp_range" value="AVL_Sheet_Only" checked>
                         <label for="AVL_Sheet">AVL Sheet Only</label>
                         <br>
                         <input type="radio" id="cn_only_compare" name="AVL_Cmp_range" value="BOM_Related_Sheet">
                         <label for="BOM_Related_Sheet">BOM Related Sheet</label>
                     </td>
                     <td>
-                        Please select to compare only the AVL sheet or all BOM related sheets, default is "AVL sheet
+                        Please select to compare only the Parts in <b>AVL</b> sheet or all the parts in the PCBA BOM parts in the <b>BOM Related</b> sheets.
+                        <br>default is "AVL sheet
                         only".
                         <br><b>AVL Sheet Only</b>: only check the ordering information in the "AVL" sheet.
-                        <br><b>BOM Related Sheet</b>: from the "BOM Related" sheet, find all parts used in the BOM, then
-                        combine to a new AVL list, finally compare with the data in the "AVL" sheet.
+                        <br><b>BOM Related Sheet</b>: from the "BOM Related" sheet, find all parts used in the BOM, then combine to a new AVL list, finally compare with the data in the "AVL" sheet.
+                        <br>parts will be store in <b>AVL_Cmp</b> sheet.
                     </td>
                 </tr>
                 <!-- 操作按键 -->

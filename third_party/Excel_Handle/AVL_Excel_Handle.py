@@ -344,6 +344,28 @@ def check_AVL_file(file_path, required_sheets=["AVL", "AVL_Cmp"]):
         print(f"无法打开文件或文件格式错误: {e}")
         return False
 
+def get_SAP_Numbers_from_AVL_sheet(file_path):
+    """
+    获取AVL表中的Part列表。
+    Args:
+        param file_path (str): 输入Excel文件路径
+    return:
+        list: AVL表中的Part列表
+    """
+    part_list = []
+    try:
+        wb = openpyxl.load_workbook(file_path)
+        ws_avl = wb["AVL"]
+        data_start_row = 7
+        for row in range(data_start_row, ws_avl.max_row + 1):
+            b_value = ws_avl[f"B{row}"].value
+            if b_value is not None:
+                part_list.append(b_value)
+        return part_list
+    except Exception as e:
+        print(f"无法获取AVL表中的Part列表: {e}")
+        return part_list
+
 # 主程序执行
 if __name__ == "__main__":
     # 获取当前脚本所在目录

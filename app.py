@@ -437,6 +437,11 @@ def AVLHandle():
                 flash(db_mgt.DBList[dbindex]+" 打开数据库成功！")
             else:
                 flash(db_mgt.DBList[dbindex]+" 打开数据库出错")
+                return jsonify({
+                    'status': 'error',
+                    'msg': "Failed to open the selected database.",
+                    'btn_enabled': btn_enabled
+                })
              # 遍历所有SAP编号,逐个查询, 获得每个SAP编号的ordering information，并保存在sql_result中
             for SAPNo_Searchby in Multi_BOM_SAP_Number_List:
                 sql_result_each, columnNameList = db.fetch(
@@ -553,25 +558,25 @@ def AVLHandle():
             uploaded_file = os.path.join(temp_dir, secure_filename(excel_file.filename))
             excel_file.save(uploaded_file)
             debug_print("Uploaded Excel file saved to:", uploaded_file)
-            # todo2: todo1实现需要时间，可以先实现手动整理比较的AVL文件，然后上传进行比较 -> 先实现手动上传比较功能，等待后续完善自动生成AVL_Cmp sheet功能
-            # 输出文件路径 
-            AVL_Compare_Output_File = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', f"AVL_Compare_Result_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
-            excel_handle.compare_avl_sheets(uploaded_file, AVL_Compare_Output_File)
-            msg_avlHandle = "Compare AVL button processing completed. If the save dialog did not pop up, please click the Download_Result button."
-            # AJAX方式下载文件
-            return download_excel(AVL_Compare_Output_File, AJAX=True, msg_avlHandle=msg_avlHandle, btn_enabled=True)
-
-
-
+            # 判断Excel文件中是否包含"AVL" sheet
+            required_sheets = excel_handle.AVL_AUTO_REQUIRED_SHEETS
+            if not excel_handle.check_AVL_file(uploaded_file, required_sheets):
+                msg_avlHandle = f"The uploaded Excel file must contain the following sheet: {', '.join(required_sheets)}."
+                return jsonify({
+                    'status': 'error', 
+                    'msg': msg_avlHandle,
+                    'btn_enabled': btn_enabled
+                })
             # step2: 根据Compare范围, 连接数据库生成AVL_Cmp sheet
             debug_print("Starting to create AVL_Cmp sheet...")
-
-
             # Excel模板路径
             template_file = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),  '2TFP900033A1076.xlsx')
             # todo: 1. 根据AVL_Cmp_range选择不同的处理方式, 生成AVL_Cmp sheet
             # 选项1: AVL Sheet Only, 获取上传文件中的AVL sheet内容，然后根据B列第7行开始的Part Numbers查询数据库，生成AVL_Cmp sheet
             if AVL_Cmp_range == 'AVL_Sheet_Only':
+                SAP_Nums_List = excel_handle.get_SAP_Numbers_from_AVL_sheet(uploaded_file)
+                debug_print("SAP Numbers extracted from AVL sheet:", SAP_Nums_List)
+                debug_print("len(SAP_Nums_List):", len(SAP_Nums_List))
                 pass
             # 选项2: BOM Related sheet,  获取上传文件中的BOM Related sheet内容，然后根据B列第3行开始的PCBA Part Numbers查询PLM获取BOM，然后根据BOM中的SAP Numbers查询数据库，生成AVL_Cmp sheet
             elif AVL_Cmp_range == 'BOM_Related_Sheet':
