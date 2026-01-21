@@ -47,23 +47,24 @@
 
 <body>
     <!-- 大标题 -->
-    <h1>This page is used for AVL automatically handling.</h1>
+    <h2>This page is used for AVL automatically handling.</h2>
     <!-- 显示软件版本信息 -->
     <div style="position: absolute; top: 10px; right: 30px; color: #888; font-size: 16px;">
         Version: {{ Version }}
     </div>
-    
+
     <!-- 用于Flash 消息显示 -->
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div style="padding: 10px; margin: 10px 0; background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; border-radius: 4px;">
-                {% for message in messages %}
-                    <p style="margin: 5px 0;">{{ message }}</p>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
-    
+    <!-- {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div
+        style="padding: 10px; margin: 10px 0; background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; border-radius: 4px;">
+        {% for message in messages %}
+        <p style="margin: 5px 0;">{{ message }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %} -->
+
     <!-- AJAX 显示消息显示 -->
     <div id="msg_avlHandle" style="height:30px;color:red">
         {{ msg_avlHandle }}
@@ -201,22 +202,36 @@
                         (Only .xls or .xlsx files are accepted)
                     </td>
                 </tr>
+                <!-- 手动整理的AVL对比 -->
+                <tr>
+                    <td>
+                        <!-- 此格为空 -->
+                    </td>
+                    <td>
+                        <input type="submit" name="btn" value="Compare_Manual_AVL" onclick="handleBtn(event);" {% if not
+                            btn_enabled %}disabled{% endif %}>
+                    </td>
+                    <td>
+                        If your import Excel file include <b>"AVL", "AVL_Cmp"</b> two sheets, <br>use this button to compare the AVL.
+                    </td>
+                </tr>
                 <!-- 选择对比范围 -->
                 <tr>
                     <td>Compare Range</td>
                     <td>
-                        <input type="radio" id="AVL_Sheet" name="AVL_Cmp_range" value="AVL_Sheet" checked>
+                        <input type="radio" id="AVL_Sheet" name="AVL_Cmp_range" value="AVL_Sheet_Only" checked>
                         <label for="AVL_Sheet">AVL Sheet Only</label>
                         <br>
                         <input type="radio" id="cn_only_compare" name="AVL_Cmp_range" value="BOM_Related_Sheet">
                         <label for="BOM_Related_Sheet">BOM Related Sheet</label>
                     </td>
                     <td>
-                        Please select to compare only the AVL sheet or all BOM related sheets, default is "AVL sheet
+                        Please select to compare only the Parts in <b>AVL</b> sheet or all the parts in the PCBA BOM parts in the <b>BOM Related</b> sheets.
+                        <br>default is "AVL sheet
                         only".
                         <br><b>AVL Sheet Only</b>: only check the ordering information in the "AVL" sheet.
-                        <br><b>BOM Related Sheet</b>: from the "BOM Related" sheet, find all parts used in the BOM, then
-                        combine to a new AVL list, finally compare with the data in the "AVL" sheet.
+                        <br><b>BOM Related Sheet</b>: from the "BOM Related" sheet, find all parts used in the BOM, then combine to a new AVL list, finally compare with the data in the "AVL" sheet.
+                        <br>parts will be store in <b>AVL_Cmp</b> sheet.
                     </td>
                 </tr>
                 <!-- 操作按键 -->
