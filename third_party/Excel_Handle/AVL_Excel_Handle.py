@@ -12,6 +12,7 @@ Revision log:
             正确的需求是只要AVL当前分组(如EF)在 AVL_Cmp 的所有分组集合中出现（无论顺序/位置），就应标为绿底，否则红底。
             同时测试代码输出文件名增加时间戳，避免覆盖。
 1.2.0 - 20260121: 增加check_AVL_file()函数, 用于检查AVL Excel文件的有效性。
+1.3.0 - 20260121: 增加get_SAP_Numbers_from_AVL_sheet()函数, 用于获取AVL表中的Part列表。
             
 
 
@@ -25,7 +26,7 @@ Revision log:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__revision__ = '1.2.0'
+__revision__ = '1.3.0'
 
 
 import datetime
@@ -147,7 +148,27 @@ def copy_AVL_to_AVL_Cmp_In_UploadFile(db_search_result_file_path, upload_AVL_fil
     # 保存目标文件
     wb_target.save(upload_AVL_file_path)    
     
-
+def get_PCBA_Part_Numbers_from_BOM_Related_sheet(file_path):
+    """
+    获取BOM Related工作表中的PCBA Part Numbers列表。
+    Args:
+        file_path (str): 输入Excel文件路径
+    return:
+        PCBA_part_list (list): BOM Related工作表中的PCBA Part Numbers列表
+    """
+    PCBA_part_list = []
+    try:
+        wb = openpyxl.load_workbook(file_path)
+        ws_bom = wb["BOM Related"]
+        data_start_row = 3
+        for row in range(data_start_row, ws_bom.max_row + 1):
+            part_number = ws_bom[f"B{row}"].value
+            if part_number is not None:
+                PCBA_part_list.append(part_number)
+        return PCBA_part_list
+    except Exception as e:
+        print(f"无法获取BOM Related工作表中的PCBA Part Numbers列表: {e}")
+        return PCBA_part_list
 
 def compare_avl_sheets(file_path, output_path):
     """
@@ -418,4 +439,10 @@ if __name__ == "__main__":
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     output_file = os.path.join(script_dir, f"AVL_Cmp_Same_List_Example_compared_{timestamp}.xlsx")  
     
-    compare_avl_sheets(input_file, output_file)
+    # compare_avl_sheets(input_file, output_file)
+
+    # debug: 获取BOM Related工作表中的PCBA Part Numbers列表
+    PCBA_Part_List = get_PCBA_Part_Numbers_from_BOM_Related_sheet(input_file)
+    print("BOM Related工作表中的PCBA Part Numbers列表:")
+    print(PCBA_Part_List)
+
