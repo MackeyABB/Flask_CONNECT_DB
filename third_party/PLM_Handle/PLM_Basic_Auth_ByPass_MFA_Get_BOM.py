@@ -83,6 +83,8 @@ def generate_auth_header(token):
     #如果返回值不为JSON，重新填写
     if not is_json(response.text):
         print("访问WindChill失败，请检查用户名、密码及网络连接")
+        print("返回内容如下：")
+        print(response.text) 
         return None
     json_data = json.loads(response.text)  
     nonce_value = json_data.get('NonceValue')  
@@ -227,7 +229,7 @@ def get_BOM(user, pwd, BOM_number, IsChinaPNOnly=bCHINA_PN_ONLY):
     return BOM_Info_list, BOM_SAP_Number_List, BOM_SAP_Number_List_Str, PCBA_Part_info_list, PLM_Login_OK
 
 if __name__ == "__main__":
-    if True:
+    if False:
         # 从环境变量获取用户名和密码
         # 若出现问题，可以使用以下方式打开vscode
             # setx PLM_User "你的PLM用户名"  # 若已配置，可跳过这步，直接启动VS Code
