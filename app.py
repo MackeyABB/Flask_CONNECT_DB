@@ -40,6 +40,7 @@ Revision History:
 3.8.0 - 20260121: 实现Compare_AVL按键的BOM_Related_Sheet功能
             根据上传Excel文件中的"BOM Related" sheet内容,获取PCBA Part Numbers列表,通过PLM获取BOM中的SAP Numbers,查询数据库获取ordering information,并与"BOM Related" sheet中的AVL内容进行对比,生成对比结果Excel文件供下载。
             此部分代码是可以跟Create AVL部分代码进行重构复用的, 但是为了避免影响已经稳定运行的Create AVL功能, 暂时不进行重构。
+3.8.1 - 20260123: 修改页面, 提示用户名不支持邮箱格式登录
 '''
 
 # 版本号
@@ -47,7 +48,7 @@ Revision History:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.8.0"
+__Version__ = "3.8.1"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
