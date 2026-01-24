@@ -152,12 +152,12 @@
                     </td>
                 </tr>
                 <tr>
-                    <td>Check interval time</td>
+                    <td>Check interval time (minutes)</td>
                     <!-- 以下时间的选择使用下拉框方式选择, 下拉内容由后端提供 -->
                     <td>
                         <select name="Check_Interval_Time">
                             {% for time_option in Check_Interval_Time_List %}
-                            {% if Check_Interval_Time_List.index(time_option) == 0 %}
+                            {% if Check_Interval_Time_List.index(time_option) == 3 %}
                             <option value="{{time_option}}" selected="selected">{{time_option}}</option>
                             {% else %}
                             <option value="{{time_option}}">{{time_option}}</option>
@@ -167,6 +167,24 @@
                     </td>
                     <td>
                         Please select interval time in minutes for automatic DB sync status checking.
+                    </td>
+                </tr>
+                <tr>
+                    <td>Maximum check times</td>
+                    <!-- 以下次数的选择使用下拉框方式选择, 下拉内容由后端提供 -->
+                    <td>
+                        <select name="MAX_TRY">
+                            {% for times_option in MAX_TRY_List %}
+                            {% if MAX_TRY_List.index(times_option) == 3 %}
+                            <option value="{{times_option}}" selected="selected">{{times_option}}</option>
+                            {% else %}
+                            <option value="{{times_option}}">{{times_option}}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>
+                        Please select maximum check times for automatic DB sync status checking.
                     </td>
                 </tr>
                 <!-- 按键 -->

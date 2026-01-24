@@ -14,7 +14,7 @@ see: Revision_Log.md
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.12.0"
+__Version__ = "3.13.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -905,6 +905,7 @@ def DBSyncCheck():
     #调用db_mgt中的函数,返回数据库同步情况
     # dbsyncinfo=db.dbSyncCheck(db_mgt.DBList,app)
     Check_Interval_Time_List = [1, 5, 10, 15, 30, 60]  # minutes
+    MAX_TRY_List = [1, 2, 3, 5, 10, 15, 30]  # 可选最大尝试次数
     btn_enabled = True
 
     if request.method == 'POST':
@@ -914,11 +915,13 @@ def DBSyncCheck():
         SAP_Numbers_List = request.form.get('SAP_Numbers_List')
         Reminder_Email = request.form.get('Reminder_Email')
         Check_Interval_Time = int(request.form.get('Check_Interval_Time'))
+        MAX_TRY = int(request.form.get('MAX_TRY', 2))
         # debug print
         debug_print("DB_Select:", DB_Select)
         debug_print("SAP_Numbers_List:", SAP_Numbers_List)
         debug_print("Reminder_Email:", Reminder_Email)
         debug_print("Check_Interval_Time:", Check_Interval_Time)
+        debug_print("MAX_TRY:", MAX_TRY)
         # 判断是否输入必要参数
         if (not SAP_Numbers_List or SAP_Numbers_List.strip() == ""):
             flash("SAP Numbers list cannot be empty. Please input valid SAP Numbers.")
@@ -927,23 +930,25 @@ def DBSyncCheck():
         else:
             btn_enabled = False
             SAP_Numbers_List_Split = re.split(r'[\s,;]+', SAP_Numbers_List.strip())
-            MAX_TRY = 2  # 可根据需要调整
             t = threading.Thread(target=background_check, args=(DB_Select, SAP_Numbers_List_Split, Reminder_Email, Check_Interval_Time, MAX_TRY), daemon=True)
             t.start()
-            flash(f"后台定时检查已启动，每{Check_Interval_Time}分钟检查一次，结果将通过邮件发送到{Reminder_Email}。")
+            flash(f"后台定时检查已启动，每{Check_Interval_Time}分钟检查一次，最多尝试{MAX_TRY}次，结果将通过邮件发送到{Reminder_Email}。")
             btn_enabled = True
         return render_template('DBSyncCheck.html',
-                                Check_Interval_Time_List = Check_Interval_Time_List, 
+                                Check_Interval_Time_List = Check_Interval_Time_List,
+                                MAX_TRY_List = MAX_TRY_List,
                                 btn_enabled=btn_enabled,
                                 SAP_Numbers_List=SAP_Numbers_List,
                                 Reminder_Email=Reminder_Email,
-                                Version=__Version__)
-
+                                Version=__Version__,
+                                MAX_TRY=MAX_TRY)
 
     return render_template('DBSyncCheck.html',
-                           Check_Interval_Time_List = Check_Interval_Time_List, 
+                           Check_Interval_Time_List = Check_Interval_Time_List,
+                           MAX_TRY_List = MAX_TRY_List,
                            btn_enabled=btn_enabled,
-                           Version=__Version__)
+                           Version=__Version__,
+                           MAX_TRY=2)
 
 
 # =========== 以下部分为Cyrus 生成的AVL BOM相关代码 ==============

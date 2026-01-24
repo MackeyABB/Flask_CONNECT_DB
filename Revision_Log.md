@@ -33,4 +33,5 @@
 | 3.9.0  | 2026-01-23 | 整理AVL Hanle页面, 能在较小的垂直分辨率下也能一屏显示更多内容 |
 | 3.10.0 | 2026-01-24 | 修改excel_mapping, 增加Detail Drawing, AVL Status, Editor, Technical Description字段的映射<br>first_write_AVL_to_excel()函数中增加对应字段的写入,以便用户检查CONNECT中Part的状态 |
 | 3.11.0  | 2026-01-24 | 版本号添加超链接可以打开Revision_Log.md文件以显示版本历史信息<br>需要安装markdown插件 |
-| 3.11.0  | 2026-01-24 | 更改DBList中四个数据库的描述名称, 使其更清晰易懂。<br>修改后：<br>    第一个为直连DESTO Cancdence CIS数据库的ODBC连接<br>    第二个为直连CNILG服务器上Access数据库的ODBC连接(AD共用)<br>   第三个为CNILG服务器上Access数据库的文件连接<br>    第四个为CNILX服务器上Access数据库的文件连接<br>所以第一个使用SAPMaxDB连接,后三个使用AccessDB连接。<br>数据库打开状态的Flash信息全改为英文。<br>页面显示全为英文|
+| 3.12.0  | 2026-01-24 | 更改DBList中四个数据库的描述名称, 使其更清晰易懂。<br>修改后：<br>    第一个为直连DESTO Cancdence CIS数据库的ODBC连接<br>    第二个为直连CNILG服务器上Access数据库的ODBC连接(AD共用)<br>   第三个为CNILG服务器上Access数据库的文件连接<br>    第四个为CNILX服务器上Access数据库的文件连接<br>所以第一个使用SAPMaxDB连接,后三个使用AccessDB连接。<br>数据库打开状态的Flash信息全改为英文。<br>页面显示全为英文|
+| 3.13.0  | 2026-01-24 | 增加DB同步状态自动查看页面并实现功能,使用多线程方式实现，不会跟其它页面任务冲突<br>可以设置:<br>1.检查哪个数据库；<br>2.检查的SAP_Number清单；<br>3. 接收通知邮箱地址; <br>4.检查间隔;<br>5.最大检查次数|
