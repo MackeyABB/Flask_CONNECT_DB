@@ -58,7 +58,7 @@
     {% endfor %}
     </p>
     <p>
-        <a href="{{ url_for('DBSelect') }}">返回选择数据库</a>
+        <a href="{{ url_for('DBSelect') }}">Select Database</a>
     </p>
     <!--表单：接收检索条件-->
     <form method="post">
@@ -77,7 +77,7 @@
 
         <!-- 条件检索 -->
         <fieldset>
-            <legend>Search by (注意:1.不要使用通配符；2:以下条件为与AND关系)</legend>
+            <legend>Search by (Note :1. Do not use wildcards; 2: The following conditions are "AND")</legend>
             <div style="display: flex; flex-wrap: wrap;">
                 <div style="flex: 1 1 50%; min-width: 300px;">
                     <p><label>Part No:<input name="PartNo" value="{{ PartNo|default('') }}"></label></p>

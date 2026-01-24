@@ -14,7 +14,7 @@ see: Revision_Log.md
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.11.0"
+__Version__ = "3.12.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -162,9 +162,9 @@ def index(DBType):
     # Open DB
     bIsDBOpen = db.openDB(int(DBType), db_mgt.DBList, app)
     if bIsDBOpen == True:
-        flash(db_mgt.DBList[int(DBType)]+" 打开数据库成功！")
+        flash(db_mgt.DBList[int(DBType)]+" Database opened successfully!")
     else:
-        flash(db_mgt.DBList[int(DBType)]+" 打开数据库出错")
+        flash(db_mgt.DBList[int(DBType)]+" Database open error")
     
     # 提交表单查询时处理
     if request.method == "POST":
@@ -464,9 +464,9 @@ def AVLHandle():
             # 打开DB
             bIsDBOpen = db.openDB(dbindex, db_mgt.DBList, app)
             if bIsDBOpen == True:
-                flash(db_mgt.DBList[dbindex]+" 打开数据库成功！")
+                flash(db_mgt.DBList[dbindex]+" Database opened successfully!")
             else:
-                flash(db_mgt.DBList[dbindex]+" 打开数据库出错")
+                flash(db_mgt.DBList[dbindex]+" Database open error")
                 return jsonify({
                     'status': 'error',
                     'msg': "Failed to open the selected database.",
@@ -604,9 +604,9 @@ def AVLHandle():
                 # 打开DB
                 bIsDBOpen = db.openDB(dbindex, db_mgt.DBList, app)
                 if bIsDBOpen == True:
-                    flash(db_mgt.DBList[dbindex]+" 打开数据库成功！")
+                    flash(db_mgt.DBList[dbindex]+" Database opened successfully!")
                 else:
-                    flash(db_mgt.DBList[dbindex]+" 打开数据库出错")
+                    flash(db_mgt.DBList[dbindex]+" Database open error")
                     return jsonify({
                         'status': 'error',
                         'msg': "Failed to open the selected database.",
@@ -657,9 +657,9 @@ def AVLHandle():
                 # 打开DB
                 bIsDBOpen = db.openDB(dbindex, db_mgt.DBList, app)
                 if bIsDBOpen == True:
-                    flash(db_mgt.DBList[dbindex]+" 打开数据库成功！")
+                    flash(db_mgt.DBList[dbindex]+" Database opened successfully!")
                 else:
-                    flash(db_mgt.DBList[dbindex]+" 打开数据库出错")
+                    flash(db_mgt.DBList[dbindex]+" Database open error")
                     return jsonify({
                         'status': 'error',
                         'msg': "Failed to open the selected database.",
