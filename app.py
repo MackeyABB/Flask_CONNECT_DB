@@ -14,7 +14,7 @@ see: Revision_Log.md
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.10.0"
+__Version__ = "3.11.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -104,6 +104,27 @@ Component_ListView=set()
 #定义Excel模板中,有效数据的首行
 Excel_Row=7
 
+from flask import render_template_string
+try:
+    import markdown
+except ImportError:
+    markdown = None
+# ...existing code...
+
+# Markdown预览路由
+@app.route('/Revision_Log.md/preview')
+def revision_log_preview():
+    md_path = 'Revision_Log.md'
+    if markdown is None:
+        return 'Markdown package not installed. Please run: pip install markdown', 500
+    try:
+        with open(md_path, 'r', encoding='utf-8') as f:
+            md_content = f.read()
+        html_content = markdown.markdown(md_content, extensions=['tables'])
+        style = '''<style>body{font-family:Arial,Helvetica,sans-serif;padding:20px;}table{border-collapse:collapse;}th,td{border:1px solid #888;padding:4px 8px;}th{background:#eee;}</style>'''
+        return render_template_string(f'{style}{html_content}')
+    except Exception as e:
+        return f'Error loading Revision_Log.md: {e}', 404
 
 '''
 初始始页面： 选择数据库

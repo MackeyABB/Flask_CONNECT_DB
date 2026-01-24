@@ -32,3 +32,4 @@
 | 3.8.1  | 2026-01-23 | 修改页面, 提示用户名不支持邮箱格式登录 |
 | 3.9.0  | 2026-01-23 | 整理AVL Hanle页面, 能在较小的垂直分辨率下也能一屏显示更多内容 |
 | 3.10.0 | 2026-01-24 | 修改excel_mapping, 增加Detail Drawing, AVL Status, Editor, Technical Description字段的映射<br>first_write_AVL_to_excel()函数中增加对应字段的写入,以便用户检查CONNECT中Part的状态 |
+| 3.11.0  | 2026-01-24 | 版本号添加超链接可以打开Revision_Log.md文件以显示版本历史信息<br>需要安装markdown插件 |
