@@ -745,7 +745,197 @@ def AVLHandle():
                            msg_avlHandle=msg_avlHandle,
                            btn_enabled=btn_enabled)
 
+# =========== 以下部分Database同步情况自动检查代码 ==============
+def get_DBSync_Sql_Result_By_SAP_Number(DB_Select, SAP_Numbers_List):
+    """ 根据SAP Numbers列表,查询数据库,返回sql_CONNECT_result, sql_DB_result, columnNameList, msg
+    Args:
+        DB_Select(str): 数据库选择
+        SAP_Numbers_List(list): SAP Numbers列表
+    Returns:
+        sql_CONNECT_result, sql_DB_result, columnNameList, msg
+    """
+    sql_CONNECT_result = []
+    sql_DB_result = []
+    columnNameList = None
+    msg = ""
+    tableName = '---All----' #检索所有表
+    # 先查询CONNECT DB作为参考数据
+    dbindex = 0    #0: CONNECT DB, 1: Access DB
+    # 打开DB
+    bIsDBOpen = db.openDB(dbindex, db_mgt.DBList, app)
+    if bIsDBOpen == True:
+        flash(db_mgt.DBList[dbindex]+" Database opened successfully!")
+    else:
+        flash(db_mgt.DBList[dbindex]+" Database open error")
+        msg = "Failed to open the CONNECT database."
+        return sql_CONNECT_result, sql_DB_result, columnNameList, msg
+    # 通过sql获取part number的信息
+    for SAPNo_Searchby in SAP_Numbers_List:
+        sql_result_each, columnNameList = db.fetch(
+            tableName=tableName, 
+            dbindex=dbindex, 
+            PartNo_Searchby='',
+            SAPNo_Searchby=SAPNo_Searchby,
+            PartValue_Searchby='',
+            MfcPartNum_Searchby='',
+            Description_Searchby='',
+            TechDescription_Searchby='',
+            Editor_Searchby=''
+        )
+        if sql_result_each:
+            sql_CONNECT_result.append(sql_result_each[0])
+        else:
+            # 未找到结果, 添加空行占位,填写SAP Number, 为第三列
+            Not_Found_Part_info = ('','', SAPNo_Searchby)
+            sql_CONNECT_result.append(Not_Found_Part_info)
+    # 再查询Access DB
+    # 根据DB_Select选择数据库
+    dbindex = int(DB_Select)    # 2: CNILG Access DB, 3: CNILX Access DB
+    # 打开DB
+    bIsDBOpen = db.openDB(dbindex, db_mgt.DBList, app)
+    if bIsDBOpen == True:
+        flash(db_mgt.DBList[dbindex]+" Database opened successfully!")
+    else:
+        flash(db_mgt.DBList[dbindex]+" Database open error")
+        msg = "Failed to open the selected Access database."
+        return sql_CONNECT_result, sql_DB_result, columnNameList, msg
+    # 通过sql获取part number的信息
+    for SAPNo_Searchby in SAP_Numbers_List:
+        sql_result_each, columnNameList = db.fetch(
+            tableName=tableName, 
+            dbindex=dbindex, 
+            PartNo_Searchby='',
+            SAPNo_Searchby=SAPNo_Searchby,
+            PartValue_Searchby='',
+            MfcPartNum_Searchby='',
+            Description_Searchby='',
+            TechDescription_Searchby='',
+            Editor_Searchby=''
+        )
+        if sql_result_each:
+            sql_DB_result.append(sql_result_each[0])
+        else:
+            # 未找到结果, 添加空行占位,填写SAP Number, 为第三列
+            Not_Found_Part_info = ('','', SAPNo_Searchby)
+            sql_DB_result.append(Not_Found_Part_info)
+    msg = "Get database result successfully."
+    return sql_CONNECT_result, sql_DB_result, columnNameList, msg
 
+def cmp_DBSync_Result(sql_CONNECT_result, sql_DB_result, columnNameList):
+    """ 比较两个数据库的查询结果, 结果输出到Excel文件,间隔行显示差异,对比完成返回Excel文件路径
+    Args:
+        sql_CONNECT_result(list): CONNECT数据库查询结果
+        sql_DB_result(list): 目标数据库查询结果
+        columnNameList(list): 列名列表
+    Returns:
+        dbsyncinfo(str): 数据库同步比较结果字符串
+        cmpare_excel_file(str): 输出Excel文件路径
+        diff_count(int): 差异数量
+
+    """
+    # 输出Excel文件路径
+    output_excel_file = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', f"DB_Sync_Comparison_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
+    # 创建Excel工作簿
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "DB Sync Comparison"
+    # 写入列名
+    for col_index, col_name in enumerate(columnNameList, start=1):
+        ws.cell(row=1, column=col_index, value=col_name)
+    # 比较结果写入Excel
+    max_rows = max(len(sql_CONNECT_result), len(sql_DB_result))
+    diff_count = 0
+    for row_index in range(max_rows):
+        connect_row = sql_CONNECT_result[row_index] if row_index < len(sql_CONNECT_result) else [''] * len(columnNameList)
+        db_row = sql_DB_result[row_index] if row_index < len(sql_DB_result) else [''] * len(columnNameList)
+        # 写入CONNECT数据库行
+        for col_index, cell_value in enumerate(connect_row, start=1):
+            ws.cell(row=row_index * 2 + 2, column=col_index, value=cell_value)
+        # 写入目标数据库行
+        for col_index, cell_value in enumerate(db_row, start=1):
+            ws.cell(row=row_index * 2 + 3, column=col_index, value=cell_value)
+        # 单元格逐个对比
+        row_diff = False
+        for col_index in range(len(columnNameList)):
+            val1 = connect_row[col_index] if col_index < len(connect_row) else ''
+            val2 = db_row[col_index] if col_index < len(db_row) else ''
+            if val1 != val2:
+                row_diff = True
+                ws.cell(row=row_index * 2 + 2, column=col_index + 1).fill = openpyxl.styles.PatternFill(start_color="FFFF0000", end_color="FFFF0000", fill_type="solid")
+                ws.cell(row=row_index * 2 + 3, column=col_index + 1).fill = openpyxl.styles.PatternFill(start_color="FFFF0000", end_color="FFFF0000", fill_type="solid")
+        if row_diff:
+            diff_count += 1
+    # 保存Excel文件
+    wb.save(output_excel_file)
+    dbsyncinfo = f"Database synchronization comparison completed. Total differences found: {diff_count}."
+    return dbsyncinfo, output_excel_file, diff_count
+
+@app.route("/dbsynccheck", methods=['GET','POST'])
+def DBSyncCheck():
+    #调用db_mgt中的函数,返回数据库同步情况
+    # dbsyncinfo=db.dbSyncCheck(db_mgt.DBList,app)
+    Check_Interval_Time_List = [5, 10, 15, 30, 60]  # minutes
+    btn_enabled = True
+    if request.method == 'POST':
+        # 处理POST请求
+        # 获取表单数据
+        DB_Select = request.form.get('DB_Select')
+        SAP_Numbers_List = request.form.get('SAP_Numbers_List')
+        Reminder_Email = request.form.get('Reminder_Email')
+        Check_Interval_Time = int(request.form.get('Check_Interval_Time'))
+        # debug print
+        debug_print("DB_Select:", DB_Select)
+        debug_print("SAP_Numbers_List:", SAP_Numbers_List)
+        debug_print("Reminder_Email:", Reminder_Email)
+        debug_print("Check_Interval_Time:", Check_Interval_Time)
+        # 判断是否输入必要参数
+        if (not SAP_Numbers_List or SAP_Numbers_List.strip() == ""):
+            flash("SAP Numbers list cannot be empty. Please input valid SAP Numbers.")
+        elif (not Reminder_Email or Reminder_Email.strip() == ""):
+            flash("Reminder email cannot be empty. Please input a valid email address.")
+        # 输入参数正确,开始处理
+        else:
+            # disable all buttons during processing
+            btn_enabled = False  
+            # get the SAP Numbers list
+            SAP_Numbers_List_Split = re.split(r'[\s,;]+', SAP_Numbers_List.strip())
+            sql_CONNECT_result, sql_DB_result, columnNameList, msg = get_DBSync_Sql_Result_By_SAP_Number(DB_Select, SAP_Numbers_List_Split)
+            if msg != "Get database result successfully.":
+                flash(msg)
+                return render_template('DBSyncCheck.html',
+                                Check_Interval_Time_List = Check_Interval_Time_List, 
+                                btn_enabled=btn_enabled,
+                                SAP_Numbers_List=SAP_Numbers_List,
+                                Reminder_Email=Reminder_Email,
+                                Version=__Version__)
+            # 比较结果并输出Excel文件
+            dbsyncinfo, cmpare_excel_file, diff_count = cmp_DBSync_Result(sql_CONNECT_result, sql_DB_result, columnNameList)
+            debug_print(dbsyncinfo)
+            debug_print(diff_count)
+            
+            # enable buttons after processing
+            btn_enabled = True  
+            flash(dbsyncinfo)
+            if True:
+                # 提供下载
+                return send_file(cmpare_excel_file, as_attachment=True)
+            else:
+                # 间隔时间发送邮件
+                pass
+
+        # 出现错误时,直接返回页面
+        return render_template('DBSyncCheck.html',
+                                Check_Interval_Time_List = Check_Interval_Time_List, 
+                                btn_enabled=btn_enabled,
+                                SAP_Numbers_List=SAP_Numbers_List,
+                                Reminder_Email=Reminder_Email,
+                                Version=__Version__)
+
+
+    return render_template('DBSyncCheck.html',
+                           Check_Interval_Time_List = Check_Interval_Time_List, 
+                           btn_enabled=btn_enabled,
+                           Version=__Version__)
 
 
 # =========== 以下部分为Cyrus 生成的AVL BOM相关代码 ==============
