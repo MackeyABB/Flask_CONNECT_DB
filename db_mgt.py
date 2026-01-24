@@ -11,12 +11,17 @@ Revision History:
         功能影响: 
         1.单PartType搜索输出列表跟All PartType时一样
         2.All PartType搜索各个条件可以同时使用为AND关系
-2.1.0 - 20240610: 新增过滤条件“Description”"techdescription" "editor"到fetch函数中。
+2.1.0 - 20260108: 新增过滤条件“Description”"techdescription" "editor"到fetch函数中。
         注意:
             SAPMaxDB中Editor字段基本都为空值,检查同一物料的AccessDB却是有值,如CAP_1630物料,导致搜索结果不一致。
             这个问题应该是数据库后台问题,需要反馈。
-
-
+2.2.0 - 20260124: 更改DBList中四个数据库的描述名称, 使其更清晰易懂。
+        修改后：
+            第一个为直连DESTO Cancdence CIS数据库的ODBC连接
+            第二个为直连CNILG服务器上Access数据库的ODBC连接(AD共用)
+            第三个为CNILG服务器上Access数据库的文件连接
+            第四个为CNILX服务器上Access数据库的文件连接
+        所以第一个使用SAPMaxDB连接,后三个使用AccessDB连接。
 
 '''
 
@@ -26,7 +31,7 @@ Revision History:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 
 
 # 导入子模块
@@ -44,10 +49,13 @@ import pypyodbc
 
 # windows parameter
 # Database List can be used.
-DBList = ['01-CONNECT Local(ODBC)', '02-Access Online(ODBC)', '03-P Disk Access','04-CONNECT DESTO(ODBC)']
+DBList = ['01-Cadence CIS DB(ODBC, DESTO)', 
+          '02-Altium Access DB(ODBC, CNILG)', 
+          '03-Access DB(File in CNILG)',
+          '04-Access DB(File in CNILX)']
 
 
-# Part Type List for DB: '01-CONNECT Local(ODBC)'
+# Part Type List for DB: '01-Cadence CIS DB(ODBC, DESTO)'
 PartTypeList_CONNECT = [
 ('---All----'),
 ('CAPACITORS'), 
@@ -99,7 +107,7 @@ PartTypeList_CONNECT_4All_Search = [
 ('TRANSISTORS'), 
 ('VARISTORS')]
 
-# Part Type list for DB: '02-Access Online(ODBC)'
+# Part Type list for DB: '02-Altium Access DB(ODBC, CNILG)'
 PartTypeList_Access = [
  ('---All----'),
 ('01-Capacitors'),
@@ -185,21 +193,22 @@ class Database:
         Returns:
             _type_: True if the connection is successful, False otherwise.
         """
-        # 01-CONNECT Local(ODBC)
+        # 01-Cadence CIS DB(ODBC, DESTO)
         if dbindex == 0:
             connStr = "DSN=CIS_Local;Uid=LIMBAS2USER;Pwd=LIMBASREAD;"
             # connStr = "DSN=CONNECT Partslib V2;Uid=LIMBAS2USER;Pwd=LIMBASREAD;"
             print(dblist[dbindex])
-        # 02-Access Online(ODBC)
+        # 02-Altium Access DB(ODBC, CNILG)
         elif dbindex == 1:
             connStr = "DSN=CIS_PartLib_P_64;Uid=cadence_port;Pwd=Cadence_CIS.3;"
             print(dblist[dbindex])
-        # 03-P Disk Access
+        # 03-Access DB(File in CNILG)
         elif dbindex == 2:
-            connStr = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=P:\Cadence\CIS_DB\CIS_PartLib.mdb;SystemDB=P:\Cadence\CIS_DB\CIS_PartLib.mdw;Uid=cadence_port;Pwd=Cadence_CIS.3;"
+            connStr = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=\\cn-s-lns050b.cn.abb.com\orcad$\DESTODATABASE\Cadence\CIS_DB\CIS_PartLib.mdb;SystemDB=\\cn-s-lns050b.cn.abb.com\orcad$\DESTODATABASE\Cadence\CIS_DB\CIS_PartLib.mdw;Uid=cadence_port;Pwd=Cadence_CIS.3;"
             print(dblist[dbindex])
+        # 04-Access DB(File in CNILX)
         elif dbindex == 3:
-            connStr = "DSN=CIS_DESTO;Uid=LIMBAS2USER;Pwd=LIMBASREAD;"
+            connStr = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=\\CN-S-APPC007P\01_EleTeam\Cadence\CIS_DB\CIS_PartLib.mdb;SystemDB=\\CN-S-APPC007P\01_EleTeam\Cadence\CIS_DB\CIS_PartLib.mdw;Uid=cadence_port;Pwd=Cadence_CIS.3;"
             print(dblist[dbindex])
 
         # 连接数据库
@@ -225,11 +234,11 @@ class Database:
         """
         # get the table list
         # 01-CONNECT Local(ODBC)
-        if dbindex == 0 or dbindex == 3:
+        if dbindex == 0 :
             # SAPMaxDB数据库获取表名的SQL语句
             sql_listTable = "select table_name from all_tables"
         # 02-Access Online(ODBC) and 03-P Disk Access
-        elif dbindex == 1 or dbindex == 2:
+        elif dbindex == 1 or dbindex == 2 or dbindex == 3:
             # Access数据库获取表名的SQL语句
             sql_listTable = "SELECT NAME FROM MSYSOBJECTS WHERE TYPE=1 AND FLAGS=0;"
         self.cursor.execute(sql_listTable)
@@ -242,11 +251,11 @@ class Database:
         # Determine DB_Type
         # 01-CONNECT Local(ODBC)
         # SAPMaxDB数据库获取表名的SQL语句
-        if dbindex == 0 or dbindex == 3:
+        if dbindex == 0 :
             DB_Type = "SAPMaxDB"
-        # 02-Access Online(ODBC) and 03-P Disk Access
+        # 02-Altium Access DB(ODBC, CNILG) and 03-Access DB(File in CNILG) and 04-Access DB(File in CNILX)
         # AccessDB数据库获取表名的SQL语句
-        elif dbindex == 1 or dbindex == 2: 
+        elif dbindex == 1 or dbindex == 2 or dbindex == 3: 
             DB_Type = "AccessDB"
         # print("Database Type:", DB_Type)
 
