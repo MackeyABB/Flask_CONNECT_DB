@@ -42,6 +42,8 @@ Revision History:
             此部分代码是可以跟Create AVL部分代码进行重构复用的, 但是为了避免影响已经稳定运行的Create AVL功能, 暂时不进行重构。
 3.8.1 - 20260123: 修改页面, 提示用户名不支持邮箱格式登录
 3.9.0 - 20260123: 整理AVL Hanle页面, 能在较小的垂直分辨率下也能一屏显示更多内容
+3.10.0 - 20260124: 修改excel_mapping, 增加Detail Drawing, AVL Status, Editor, Technical Description字段的映射
+            first_write_AVL_to_excel()函数中增加对应字段的写入,以便用户检查CONNECT中Part的状态
 '''
 
 # 版本号
@@ -49,7 +51,7 @@ Revision History:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.9.0"
+__Version__ = "3.10.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
