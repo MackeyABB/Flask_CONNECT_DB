@@ -37,6 +37,9 @@ import third_party.Excel_Handle.AVL_Excel_Handle as excel_handle
 import openpyxl
 import tempfile
 import os
+import threading
+import time
+import win32com.client as win32
 
 # Global Variables
 first_AVL_Output_File = ""  # Excel输出文件路径
@@ -759,19 +762,19 @@ def get_DBSync_Sql_Result_By_SAP_Number(DB_Select, SAP_Numbers_List):
     columnNameList = None
     msg = ""
     tableName = '---All----' #检索所有表
+    # 线程安全：每次新建db实例
+    db_local = db_mgt.Database()
     # 先查询CONNECT DB作为参考数据
     dbindex = 0    #0: CONNECT DB, 1: Access DB
-    # 打开DB
-    bIsDBOpen = db.openDB(dbindex, db_mgt.DBList, app)
+    bIsDBOpen = db_local.openDB(dbindex, db_mgt.DBList, app)
     if bIsDBOpen == True:
-        flash(db_mgt.DBList[dbindex]+" Database opened successfully!")
+        debug_print(db_mgt.DBList[dbindex]+" Database opened successfully!")
     else:
-        flash(db_mgt.DBList[dbindex]+" Database open error")
+        debug_print(db_mgt.DBList[dbindex]+" Database open error")
         msg = "Failed to open the CONNECT database."
         return sql_CONNECT_result, sql_DB_result, columnNameList, msg
-    # 通过sql获取part number的信息
     for SAPNo_Searchby in SAP_Numbers_List:
-        sql_result_each, columnNameList = db.fetch(
+        sql_result_each, columnNameList = db_local.fetch(
             tableName=tableName, 
             dbindex=dbindex, 
             PartNo_Searchby='',
@@ -785,23 +788,19 @@ def get_DBSync_Sql_Result_By_SAP_Number(DB_Select, SAP_Numbers_List):
         if sql_result_each:
             sql_CONNECT_result.append(sql_result_each[0])
         else:
-            # 未找到结果, 添加空行占位,填写SAP Number, 为第三列
             Not_Found_Part_info = ('','', SAPNo_Searchby)
             sql_CONNECT_result.append(Not_Found_Part_info)
     # 再查询Access DB
-    # 根据DB_Select选择数据库
     dbindex = int(DB_Select)    # 2: CNILG Access DB, 3: CNILX Access DB
-    # 打开DB
-    bIsDBOpen = db.openDB(dbindex, db_mgt.DBList, app)
+    bIsDBOpen = db_local.openDB(dbindex, db_mgt.DBList, app)
     if bIsDBOpen == True:
-        flash(db_mgt.DBList[dbindex]+" Database opened successfully!")
+        debug_print(db_mgt.DBList[dbindex]+" Database opened successfully!")
     else:
-        flash(db_mgt.DBList[dbindex]+" Database open error")
+        debug_print(db_mgt.DBList[dbindex]+" Database open error")
         msg = "Failed to open the selected Access database."
         return sql_CONNECT_result, sql_DB_result, columnNameList, msg
-    # 通过sql获取part number的信息
     for SAPNo_Searchby in SAP_Numbers_List:
-        sql_result_each, columnNameList = db.fetch(
+        sql_result_each, columnNameList = db_local.fetch(
             tableName=tableName, 
             dbindex=dbindex, 
             PartNo_Searchby='',
@@ -815,7 +814,6 @@ def get_DBSync_Sql_Result_By_SAP_Number(DB_Select, SAP_Numbers_List):
         if sql_result_each:
             sql_DB_result.append(sql_result_each[0])
         else:
-            # 未找到结果, 添加空行占位,填写SAP Number, 为第三列
             Not_Found_Part_info = ('','', SAPNo_Searchby)
             sql_DB_result.append(Not_Found_Part_info)
     msg = "Get database result successfully."
@@ -870,12 +868,45 @@ def cmp_DBSync_Result(sql_CONNECT_result, sql_DB_result, columnNameList):
     dbsyncinfo = f"Database synchronization comparison completed. Total differences found: {diff_count}."
     return dbsyncinfo, output_excel_file, diff_count
 
+def send_outlook_mail(to, subject, body, attachment_path=None):
+    try:
+        outlook = win32.Dispatch('outlook.application')
+        mail = outlook.CreateItem(0)
+        mail.To = to
+        mail.Subject = subject
+        mail.Body = body
+        if attachment_path:
+            mail.Attachments.Add(attachment_path)
+        mail.Send()
+    except Exception as e:
+        debug_print(f"Failed to send mail: {e}")
+
+def background_check(DB_Select, SAP_Numbers_List, Reminder_Email, Check_Interval_Time, MAX_TRY):
+    try_count = 0
+    while True:
+        try_count += 1
+        if try_count < MAX_TRY:
+            sql_CONNECT_result, sql_DB_result, columnNameList, msg = get_DBSync_Sql_Result_By_SAP_Number(DB_Select, SAP_Numbers_List)
+            dbsyncinfo, cmpare_excel_file, diff_count = cmp_DBSync_Result(sql_CONNECT_result, sql_DB_result, columnNameList)
+            debug_print(f"[DBSyncCheck] Try {try_count}, diff_count={diff_count}")
+            subject = f"DB Sync Check Result (Try {try_count})"
+            body = f"{dbsyncinfo}\n\nChecked SAP Numbers: {', '.join(SAP_Numbers_List)}\nTime: {datetime.datetime.now()}"
+            send_outlook_mail(Reminder_Email, subject, body, cmpare_excel_file)
+        else:
+            subject = f"DB Sync Check Timeout (try_count >= {MAX_TRY})"
+            body = f"DB同步检查超时，差异计数达到{diff_count}，已停止自动检查。\n\nChecked SAP Numbers: {', '.join(SAP_Numbers_List)}\nTime: {datetime.datetime.now()}"
+            send_outlook_mail(Reminder_Email, subject, body, cmpare_excel_file)
+            break
+        time.sleep(Check_Interval_Time * 60)
+    debug_print("[DBSyncCheck] Background check finished.")
+
 @app.route("/dbsynccheck", methods=['GET','POST'])
 def DBSyncCheck():
     #调用db_mgt中的函数,返回数据库同步情况
     # dbsyncinfo=db.dbSyncCheck(db_mgt.DBList,app)
-    Check_Interval_Time_List = [5, 10, 15, 30, 60]  # minutes
+    Check_Interval_Time_List = [1, 5, 10, 15, 30, 60]  # minutes
     btn_enabled = True
+
     if request.method == 'POST':
         # 处理POST请求
         # 获取表单数据
@@ -893,37 +924,14 @@ def DBSyncCheck():
             flash("SAP Numbers list cannot be empty. Please input valid SAP Numbers.")
         elif (not Reminder_Email or Reminder_Email.strip() == ""):
             flash("Reminder email cannot be empty. Please input a valid email address.")
-        # 输入参数正确,开始处理
         else:
-            # disable all buttons during processing
-            btn_enabled = False  
-            # get the SAP Numbers list
+            btn_enabled = False
             SAP_Numbers_List_Split = re.split(r'[\s,;]+', SAP_Numbers_List.strip())
-            sql_CONNECT_result, sql_DB_result, columnNameList, msg = get_DBSync_Sql_Result_By_SAP_Number(DB_Select, SAP_Numbers_List_Split)
-            if msg != "Get database result successfully.":
-                flash(msg)
-                return render_template('DBSyncCheck.html',
-                                Check_Interval_Time_List = Check_Interval_Time_List, 
-                                btn_enabled=btn_enabled,
-                                SAP_Numbers_List=SAP_Numbers_List,
-                                Reminder_Email=Reminder_Email,
-                                Version=__Version__)
-            # 比较结果并输出Excel文件
-            dbsyncinfo, cmpare_excel_file, diff_count = cmp_DBSync_Result(sql_CONNECT_result, sql_DB_result, columnNameList)
-            debug_print(dbsyncinfo)
-            debug_print(diff_count)
-            
-            # enable buttons after processing
-            btn_enabled = True  
-            flash(dbsyncinfo)
-            if True:
-                # 提供下载
-                return send_file(cmpare_excel_file, as_attachment=True)
-            else:
-                # 间隔时间发送邮件
-                pass
-
-        # 出现错误时,直接返回页面
+            MAX_TRY = 2  # 可根据需要调整
+            t = threading.Thread(target=background_check, args=(DB_Select, SAP_Numbers_List_Split, Reminder_Email, Check_Interval_Time, MAX_TRY), daemon=True)
+            t.start()
+            flash(f"后台定时检查已启动，每{Check_Interval_Time}分钟检查一次，结果将通过邮件发送到{Reminder_Email}。")
+            btn_enabled = True
         return render_template('DBSyncCheck.html',
                                 Check_Interval_Time_List = Check_Interval_Time_List, 
                                 btn_enabled=btn_enabled,
