@@ -42,7 +42,7 @@ excel_mapping = [
     ('A', None),        # 序号，特殊处理
     ('B', 2),           # SAP_Number
     ('C', 3),           # SAP_Description
-    ('D', None),        # 空
+    ('D', 36),          # detaildrawing 
     ('E', 6),           # manufact_1
     ('F', 7),           # manufact_partnum_1
     ('G', 9),           # manufact_2
@@ -57,6 +57,9 @@ excel_mapping = [
     ('P', 22),          # manufact_partnum_6
     ('Q', 24),          # manufact_7
     ('R', 25),          # manufact_partnum_7
+    ('U', 37),          # AVL_Status
+    ('V', 38),          # Editor
+    ('W', 40),          # Technical Description, e.g. FCN
 ]
 
 def first_write_AVL_to_excel(template_file, sql_result, Multi_PCBA_Part_info_list, output_excel_file):

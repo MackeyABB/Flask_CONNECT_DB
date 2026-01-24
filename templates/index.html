@@ -48,9 +48,9 @@
 
 <body>
     <!-- 显示软件版本信息 -->
-    <div style="position: absolute; top: 10px; right: 30px; color: #888; font-size: 16px;">
-    Version: {{ Version }}
-</div>
+    <div style="position: absolute; top: 8px; right: 20px; color: #888; font-size: 0.9em;">
+        <a href="/Revision_Log.md/preview" target="_blank" style="color: #888; text-decoration: underline;">Version: {{ Version }}</a>
+    </div>
     <!--输出flash调试信息-->
     <p>
         {% for message in get_flashed_messages() %}
