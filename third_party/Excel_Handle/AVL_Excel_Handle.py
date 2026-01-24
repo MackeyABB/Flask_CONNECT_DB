@@ -13,6 +13,7 @@ Revision log:
             同时测试代码输出文件名增加时间戳，避免覆盖。
 1.2.0 - 20260121: 增加check_AVL_file()函数, 用于检查AVL Excel文件的有效性。
 1.3.0 - 20260121: 增加get_SAP_Numbers_from_AVL_sheet()函数, 用于获取AVL表中的Part列表。
+1.3.1 - 20260124: 因PyPika_CONNECT库更新,excel_mapping中索引需调整.
             
 
 
@@ -57,9 +58,9 @@ excel_mapping = [
     ('P', 22),          # manufact_partnum_6
     ('Q', 24),          # manufact_7
     ('R', 25),          # manufact_partnum_7
-    ('U', 37),          # AVL_Status
-    ('V', 38),          # Editor
-    ('W', 40),          # Technical Description, e.g. FCN
+    ('U', 35),          # AVL_Status
+    ('V', 36),          # Editor
+    ('W', 38),          # Technical Description, e.g. FCN
 ]
 
 def first_write_AVL_to_excel(template_file, sql_result, Multi_PCBA_Part_info_list, output_excel_file):
