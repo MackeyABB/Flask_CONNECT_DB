@@ -14,7 +14,7 @@ see: Revision_Log.md
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.14.0"
+__Version__ = "4.0.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -40,6 +40,7 @@ import os
 import threading
 import time
 import win32com.client as win32
+from flask import g
 
 # Global Variables
 first_AVL_Output_File = ""  # Excel输出文件路径
@@ -83,7 +84,11 @@ app = Flask(__name__)
 
 # 对于IIS生产系统,这段要放在这里,不能放在main里
 # create DB instance
-db = db_mgt.Database()
+# db = db_mgt.Database()
+def get_db():
+    if 'db' not in g:
+        g.db = db_mgt.Database()
+    return g.db
 
 # set debug, can work even in production
 app.config['ENV'] = 'development'
@@ -152,6 +157,7 @@ submit之后显示检索内容
 '''
 @app.route("/search/<DBType>", methods=['GET','POST'])
 def index(DBType):
+    db = get_db()
     # 根据DBType来设置Part Type 列表的内容,DBType为str,对应db_mgt.DBList的index值,从0开始
     if DBType == '0' or DBType == '3': 
         #如果将值直接在render_template里赋值,数据第一次会传递不过去,不知原因。
@@ -366,6 +372,7 @@ def downloadExcelFile(filename):
 
 @app.route("/AVLhandle", methods=['GET','POST'])
 def AVLHandle():
+    db = get_db()
     # test flash('msg test'), 需要进行手动清除
     # flash('Welcome to AVL Handle Page!')
     # 网页运行信息
@@ -1004,6 +1011,7 @@ def DBSyncCheck():
 # =========== 以下部分为Cyrus 生成的AVL BOM相关代码 ==============
 #函数,功能为读取Windhill的BOM表并去除重复。输入,Excel Sheet, WinChill返回的JSON,Level是指BOM结构上的层级,1为首层
 def showBOM(sheet,subpart,level):
+    db = get_db()
     if level > 1:
         #判断PartNumber是否已经存在于当前AVL中
         if not subpart["PartNumber"] in AVLPart_ListView:
@@ -1065,6 +1073,7 @@ def AVLIndex():
 #avl export页面,生成AVL后的返回页面
 @app.route('/exportavl',methods=['GET','POST'])  
 def exportavl():
+    db = get_db()
     #由于运行在服务器,每次访问时,均需要先重置Global变量以达到预期效果
     global AVLPart_ListView
     AVLPart_ListView.clear()
