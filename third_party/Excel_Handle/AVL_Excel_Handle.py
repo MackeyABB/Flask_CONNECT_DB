@@ -43,7 +43,7 @@ excel_mapping = [
     ('A', None),        # 序号，特殊处理
     ('B', 2),           # SAP_Number
     ('C', 3),           # SAP_Description
-    ('D', 36),          # detaildrawing 
+    ('D', 34),          # detaildrawing 
     ('E', 6),           # manufact_1
     ('F', 7),           # manufact_partnum_1
     ('G', 9),           # manufact_2
