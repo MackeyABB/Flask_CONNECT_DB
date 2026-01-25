@@ -35,3 +35,5 @@
 | 3.11.0  | 2026-01-24 | 版本号添加超链接可以打开Revision_Log.md文件以显示版本历史信息<br>需要安装markdown插件 |
 | 3.12.0  | 2026-01-24 | 更改DBList中四个数据库的描述名称, 使其更清晰易懂。<br>修改后：<br>    第一个为直连DESTO Cancdence CIS数据库的ODBC连接<br>    第二个为直连CNILG服务器上Access数据库的ODBC连接(AD共用)<br>   第三个为CNILG服务器上Access数据库的文件连接<br>    第四个为CNILX服务器上Access数据库的文件连接<br>所以第一个使用SAPMaxDB连接,后三个使用AccessDB连接。<br>数据库打开状态的Flash信息全改为英文。<br>页面显示全为英文|
 | 3.13.0  | 2026-01-24 | 增加DB同步状态自动查看页面并实现功能,使用多线程方式实现，不会跟其它页面任务冲突<br>可以设置:<br>1.检查哪个数据库；<br>2.检查的SAP_Number清单；<br>3. 接收通知邮箱地址; <br>4.检查间隔;<br>5.最大检查次数|
+| 3.13.1  | 2026-01-25 | 增加DB sync status check中diff_count=0时结束检查的程序逻辑。|
+| 3.14.0  | 2026-01-25 | dbsynccheck页面增加Check Scope Selection功能<br>可以选择仅对比部分列，仅关心eCAD相关的数据<br>程序增加此部分的实现，并且对比结果相同的单元格底色设置为浅绿。|
