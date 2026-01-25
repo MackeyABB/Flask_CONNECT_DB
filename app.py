@@ -14,7 +14,7 @@ see: Revision_Log.md
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.13.0"
+__Version__ = "3.13.1"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -892,8 +892,20 @@ def background_check(DB_Select, SAP_Numbers_List, Reminder_Email, Check_Interval
             dbsyncinfo, cmpare_excel_file, diff_count = cmp_DBSync_Result(sql_CONNECT_result, sql_DB_result, columnNameList)
             debug_print(f"[DBSyncCheck] Try {try_count}, diff_count={diff_count}")
             subject = f"DB Sync Check Result (Try {try_count})"
-            body = f"{dbsyncinfo}\n\nChecked SAP Numbers: {', '.join(SAP_Numbers_List)}\nTime: {datetime.datetime.now()}"
-            send_outlook_mail(Reminder_Email, subject, body, cmpare_excel_file)
+            if diff_count == 0:
+                body = (
+                    f"{dbsyncinfo}\n\n当前差异计数(diff_count): 0\n数据库同步完成，自动对比结束。"
+                    f"\n\nChecked SAP Numbers: {', '.join(SAP_Numbers_List)}\nTime: {datetime.datetime.now()}"
+                )
+                send_outlook_mail(Reminder_Email, subject, body, cmpare_excel_file)
+                debug_print("[DBSyncCheck] No differences found, stopping background check.")
+                break
+            else:
+                body = (
+                    f"{dbsyncinfo}\n\n当前差异计数(diff_count): {diff_count}"
+                    f"\n\nChecked SAP Numbers: {', '.join(SAP_Numbers_List)}\nTime: {datetime.datetime.now()}"
+                )
+                send_outlook_mail(Reminder_Email, subject, body, cmpare_excel_file)
         else:
             subject = f"DB Sync Check Timeout (try_count >= {MAX_TRY})"
             body = f"DB同步检查超时，差异计数达到{diff_count}，已停止自动检查。\n\nChecked SAP Numbers: {', '.join(SAP_Numbers_List)}\nTime: {datetime.datetime.now()}"
