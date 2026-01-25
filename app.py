@@ -14,7 +14,7 @@ see: Revision_Log.md
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "3.13.1"
+__Version__ = "3.14.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -819,7 +819,7 @@ def get_DBSync_Sql_Result_By_SAP_Number(DB_Select, SAP_Numbers_List):
     msg = "Get database result successfully."
     return sql_CONNECT_result, sql_DB_result, columnNameList, msg
 
-def cmp_DBSync_Result(sql_CONNECT_result, sql_DB_result, columnNameList):
+def cmp_DBSync_Result(sql_CONNECT_result, sql_DB_result, columnNameList, compare_columns=None):
     """ 比较两个数据库的查询结果, 结果输出到Excel文件,间隔行显示差异,对比完成返回Excel文件路径
     Args:
         sql_CONNECT_result(list): CONNECT数据库查询结果
@@ -843,6 +843,12 @@ def cmp_DBSync_Result(sql_CONNECT_result, sql_DB_result, columnNameList):
     # 比较结果写入Excel
     max_rows = max(len(sql_CONNECT_result), len(sql_DB_result))
     diff_count = 0
+    # 计算需要对比的列索引
+    if compare_columns is not None:
+        compare_indices = [columnNameList.index(col) for col in compare_columns if col in columnNameList]
+    else:
+        compare_indices = list(range(len(columnNameList)))
+
     for row_index in range(max_rows):
         connect_row = sql_CONNECT_result[row_index] if row_index < len(sql_CONNECT_result) else [''] * len(columnNameList)
         db_row = sql_DB_result[row_index] if row_index < len(sql_DB_result) else [''] * len(columnNameList)
@@ -857,13 +863,33 @@ def cmp_DBSync_Result(sql_CONNECT_result, sql_DB_result, columnNameList):
             ws.cell(row=row_index * 2 + 3, column=col_index, value=cell_value)
         # 单元格逐个对比（右移一列）
         row_diff = False
-        for col_index in range(len(columnNameList)):
-            val1 = connect_row[col_index] if col_index < len(connect_row) else ''
-            val2 = db_row[col_index] if col_index < len(db_row) else ''
-            if val1 != val2:
-                row_diff = True
-                ws.cell(row=row_index * 2 + 2, column=col_index + 2).fill = openpyxl.styles.PatternFill(start_color="FFFF0000", end_color="FFFF0000", fill_type="solid")
-                ws.cell(row=row_index * 2 + 3, column=col_index + 2).fill = openpyxl.styles.PatternFill(start_color="FFFF0000", end_color="FFFF0000", fill_type="solid")
+        # 对比并设置底色
+        green_fill = openpyxl.styles.PatternFill(start_color="CCFFCC", end_color="CCFFCC", fill_type="solid")  # 浅绿
+        red_fill = openpyxl.styles.PatternFill(start_color="FFFF0000", end_color="FFFF0000", fill_type="solid")  # 红色
+        if compare_columns is None:
+            # 保持原有方式：所有列都对比
+            for col_index in compare_indices:
+                val1 = connect_row[col_index] if col_index < len(connect_row) else ''
+                val2 = db_row[col_index] if col_index < len(db_row) else ''
+                if val1 != val2:
+                    row_diff = True
+                    ws.cell(row=row_index * 2 + 2, column=col_index + 2).fill = red_fill
+                    ws.cell(row=row_index * 2 + 3, column=col_index + 2).fill = red_fill
+                else:
+                    ws.cell(row=row_index * 2 + 2, column=col_index + 2).fill = green_fill
+                    ws.cell(row=row_index * 2 + 3, column=col_index + 2).fill = green_fill
+        else:
+            # 只对比指定列
+            for col_index in compare_indices:
+                val1 = connect_row[col_index] if col_index < len(connect_row) else ''
+                val2 = db_row[col_index] if col_index < len(db_row) else ''
+                if val1 != val2:
+                    row_diff = True
+                    ws.cell(row=row_index * 2 + 2, column=col_index + 2).fill = red_fill
+                    ws.cell(row=row_index * 2 + 3, column=col_index + 2).fill = red_fill
+                else:
+                    ws.cell(row=row_index * 2 + 2, column=col_index + 2).fill = green_fill
+                    ws.cell(row=row_index * 2 + 3, column=col_index + 2).fill = green_fill
         if row_diff:
             diff_count += 1
     wb.save(output_excel_file)
@@ -883,30 +909,37 @@ def send_outlook_mail(to, subject, body, attachment_path=None):
     except Exception as e:
         debug_print(f"Failed to send mail: {e}")
 
-def background_check(DB_Select, SAP_Numbers_List, Reminder_Email, Check_Interval_Time, MAX_TRY):
+def background_check(DB_Select, SAP_Numbers_List, Reminder_Email, Check_Interval_Time, MAX_TRY, Chk_Scope):
     try_count = 0
+    # get chk scope
+    if Chk_Scope == 'All_Columns':
+        compare_columns = None
+    elif Chk_Scope == 'eCAD_Related_Columns':
+        # 仅比较eCAD相关列,exclude:parttype,editor,us_technology
+        compare_columns = ['partnumber', 'value', 'sap_number', 'sap_description', 'parttype', 'manufact 1', 'manufact partnum 1', 'datasheet 1', 'manufact 2', 'manufact partnum 2', 'datasheet 2', 'manufact 3', 'manufact partnum 3', 'datasheet 3', 'manufact 4', 'manufact partnum 4', 'datasheet 4', 'manufact 5', 'manufact partnum 5', 'datasheet 5', 'manufact 6', 'manufact partnum 6', 'datasheet 6', 'manufact 7', 'manufact partnum 7', 'datasheet 7', 'scm_symbol', 'pcb_footprint', 'alt_symbols', 'mounttechn', 'ad_symbol', 'ad_footprint', 'ad_alt_footprint', 'detaildrawing', 'status',  'techdescription']
     while True:
         try_count += 1
-        if try_count < MAX_TRY:
-            sql_CONNECT_result, sql_DB_result, columnNameList, msg = get_DBSync_Sql_Result_By_SAP_Number(DB_Select, SAP_Numbers_List)
-            dbsyncinfo, cmpare_excel_file, diff_count = cmp_DBSync_Result(sql_CONNECT_result, sql_DB_result, columnNameList)
-            debug_print(f"[DBSyncCheck] Try {try_count}, diff_count={diff_count}")
+        sql_CONNECT_result, sql_DB_result, columnNameList, msg = get_DBSync_Sql_Result_By_SAP_Number(DB_Select, SAP_Numbers_List)
+        dbsyncinfo, cmpare_excel_file, diff_count = cmp_DBSync_Result(sql_CONNECT_result, sql_DB_result, columnNameList, compare_columns)
+        debug_print(f"[DBSyncCheck] Try {try_count}, diff_count={diff_count}")
+        if diff_count == 0:
+            subject = f"DB Sync Check finished with No Differences"
+            body = (
+                f"{dbsyncinfo}\n\n当前差异计数(diff_count): 0\n数据库同步完成，自动对比结束。"
+                f"\n\nChecked SAP Numbers: {', '.join(SAP_Numbers_List)}\nTime: {datetime.datetime.now()}"
+            )
+            send_outlook_mail(Reminder_Email, subject, body, cmpare_excel_file)
+            debug_print("[DBSyncCheck] No differences found, stopping background check.")
+            break
+        elif try_count < MAX_TRY:
             subject = f"DB Sync Check Result (Try {try_count})"
-            if diff_count == 0:
-                body = (
-                    f"{dbsyncinfo}\n\n当前差异计数(diff_count): 0\n数据库同步完成，自动对比结束。"
-                    f"\n\nChecked SAP Numbers: {', '.join(SAP_Numbers_List)}\nTime: {datetime.datetime.now()}"
-                )
-                send_outlook_mail(Reminder_Email, subject, body, cmpare_excel_file)
-                debug_print("[DBSyncCheck] No differences found, stopping background check.")
-                break
-            else:
-                body = (
-                    f"{dbsyncinfo}\n\n当前差异计数(diff_count): {diff_count}"
-                    f"\n\nChecked SAP Numbers: {', '.join(SAP_Numbers_List)}\nTime: {datetime.datetime.now()}"
-                )
-                send_outlook_mail(Reminder_Email, subject, body, cmpare_excel_file)
+            body = (
+                f"{dbsyncinfo}\n\n当前差异计数(diff_count): {diff_count}"
+                f"\n\nChecked SAP Numbers: {', '.join(SAP_Numbers_List)}\nTime: {datetime.datetime.now()}"
+            )
+            send_outlook_mail(Reminder_Email, subject, body, cmpare_excel_file)
         else:
+            # 达到最大尝试次数，发送超时通知邮件
             subject = f"DB Sync Check Timeout (try_count >= {MAX_TRY})"
             body = f"DB同步检查超时，差异计数达到{diff_count}，已停止自动检查。\n\nChecked SAP Numbers: {', '.join(SAP_Numbers_List)}\nTime: {datetime.datetime.now()}"
             send_outlook_mail(Reminder_Email, subject, body, cmpare_excel_file)
@@ -930,12 +963,14 @@ def DBSyncCheck():
         Reminder_Email = request.form.get('Reminder_Email')
         Check_Interval_Time = int(request.form.get('Check_Interval_Time'))
         MAX_TRY = int(request.form.get('MAX_TRY', 2))
+        Chk_Scope = request.form.get('Chk_Scope')
         # debug print
         debug_print("DB_Select:", DB_Select)
         debug_print("SAP_Numbers_List:", SAP_Numbers_List)
         debug_print("Reminder_Email:", Reminder_Email)
         debug_print("Check_Interval_Time:", Check_Interval_Time)
         debug_print("MAX_TRY:", MAX_TRY)
+        debug_print("Chk_Scope:", Chk_Scope)
         # 判断是否输入必要参数
         if (not SAP_Numbers_List or SAP_Numbers_List.strip() == ""):
             flash("SAP Numbers list cannot be empty. Please input valid SAP Numbers.")
@@ -944,10 +979,11 @@ def DBSyncCheck():
         else:
             btn_enabled = False
             SAP_Numbers_List_Split = re.split(r'[\s,;]+', SAP_Numbers_List.strip())
-            t = threading.Thread(target=background_check, args=(DB_Select, SAP_Numbers_List_Split, Reminder_Email, Check_Interval_Time, MAX_TRY), daemon=True)
+            t = threading.Thread(target=background_check, args=(DB_Select, SAP_Numbers_List_Split, Reminder_Email, Check_Interval_Time, MAX_TRY, Chk_Scope), daemon=True)
             t.start()
             flash(f"后台定时检查已启动，每{Check_Interval_Time}分钟检查一次，最多尝试{MAX_TRY}次，结果将通过邮件发送到{Reminder_Email}。")
-            btn_enabled = True
+            # 设置按键不可用，防止多次提交
+            btn_enabled = False
         return render_template('DBSyncCheck.html',
                                 Check_Interval_Time_List = Check_Interval_Time_List,
                                 MAX_TRY_List = MAX_TRY_List,
@@ -955,14 +991,14 @@ def DBSyncCheck():
                                 SAP_Numbers_List=SAP_Numbers_List,
                                 Reminder_Email=Reminder_Email,
                                 Version=__Version__,
-                                MAX_TRY=MAX_TRY)
+                                MAX_TRY=MAX_TRY,
+                                Chk_Scope=Chk_Scope)
 
     return render_template('DBSyncCheck.html',
                            Check_Interval_Time_List = Check_Interval_Time_List,
                            MAX_TRY_List = MAX_TRY_List,
                            btn_enabled=btn_enabled,
-                           Version=__Version__,
-                           MAX_TRY=2)
+                           Version=__Version__)
 
 
 # =========== 以下部分为Cyrus 生成的AVL BOM相关代码 ==============
