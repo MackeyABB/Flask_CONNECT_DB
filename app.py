@@ -14,7 +14,7 @@ see: Revision_Log.md
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "4.0.1"
+__Version__ = "4.0.2"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
