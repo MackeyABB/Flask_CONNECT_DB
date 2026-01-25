@@ -833,12 +833,12 @@ def cmp_DBSync_Result(sql_CONNECT_result, sql_DB_result, columnNameList):
     """
     # 输出Excel文件路径
     output_excel_file = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'ExportFiles', f"DB_Sync_Comparison_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
-    # 创建Excel工作簿
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "DB Sync Comparison"
-    # 写入列名
-    for col_index, col_name in enumerate(columnNameList, start=1):
+    # 写入列名（右移一列）
+    ws.cell(row=1, column=1, value="Item")
+    for col_index, col_name in enumerate(columnNameList, start=2):
         ws.cell(row=1, column=col_index, value=col_name)
     # 比较结果写入Excel
     max_rows = max(len(sql_CONNECT_result), len(sql_DB_result))
@@ -846,24 +846,26 @@ def cmp_DBSync_Result(sql_CONNECT_result, sql_DB_result, columnNameList):
     for row_index in range(max_rows):
         connect_row = sql_CONNECT_result[row_index] if row_index < len(sql_CONNECT_result) else [''] * len(columnNameList)
         db_row = sql_DB_result[row_index] if row_index < len(sql_DB_result) else [''] * len(columnNameList)
-        # 写入CONNECT数据库行
-        for col_index, cell_value in enumerate(connect_row, start=1):
+        seq_num = row_index + 1
+        # 写入CONNECT数据库行（右移一列，A列序号）
+        ws.cell(row=row_index * 2 + 2, column=1, value=seq_num)
+        for col_index, cell_value in enumerate(connect_row, start=2):
             ws.cell(row=row_index * 2 + 2, column=col_index, value=cell_value)
-        # 写入目标数据库行
-        for col_index, cell_value in enumerate(db_row, start=1):
+        # 写入目标数据库行（右移一列，A列序号）
+        ws.cell(row=row_index * 2 + 3, column=1, value=seq_num)
+        for col_index, cell_value in enumerate(db_row, start=2):
             ws.cell(row=row_index * 2 + 3, column=col_index, value=cell_value)
-        # 单元格逐个对比
+        # 单元格逐个对比（右移一列）
         row_diff = False
         for col_index in range(len(columnNameList)):
             val1 = connect_row[col_index] if col_index < len(connect_row) else ''
             val2 = db_row[col_index] if col_index < len(db_row) else ''
             if val1 != val2:
                 row_diff = True
-                ws.cell(row=row_index * 2 + 2, column=col_index + 1).fill = openpyxl.styles.PatternFill(start_color="FFFF0000", end_color="FFFF0000", fill_type="solid")
-                ws.cell(row=row_index * 2 + 3, column=col_index + 1).fill = openpyxl.styles.PatternFill(start_color="FFFF0000", end_color="FFFF0000", fill_type="solid")
+                ws.cell(row=row_index * 2 + 2, column=col_index + 2).fill = openpyxl.styles.PatternFill(start_color="FFFF0000", end_color="FFFF0000", fill_type="solid")
+                ws.cell(row=row_index * 2 + 3, column=col_index + 2).fill = openpyxl.styles.PatternFill(start_color="FFFF0000", end_color="FFFF0000", fill_type="solid")
         if row_diff:
             diff_count += 1
-    # 保存Excel文件
     wb.save(output_excel_file)
     dbsyncinfo = f"Database synchronization comparison completed. Total differences found: {diff_count}."
     return dbsyncinfo, output_excel_file, diff_count
