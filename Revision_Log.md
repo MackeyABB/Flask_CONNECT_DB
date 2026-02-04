@@ -39,3 +39,5 @@
 | 3.14.0  | 2026-01-25 | dbsynccheck页面增加Check Scope Selection功能<br>可以选择仅对比部分列，仅关心eCAD相关的数据<br>程序增加此部分的实现，并且对比结果相同的单元格底色设置为浅绿。|
 | 4.0.0  | 2026-01-25 | 主程序中db实例不再使用全局，使用from flask import g方式在每个需要的地方新建实例，以避免多作用多线程操作下出现的冲突问题。|
 | 4.0.1  | 2026-01-25 | excel_mapping中的dataildrawing的位置号错误更改|
+| 4.0.2  | 2026-01-25 | 主跳转页面第三个选项序号从2改回3|
+| 4.1.0  | 2026-02-04 | 增加过滤条件“Manufacturer_Searchby”参数输入,以实现按制造商过滤搜索结果。<br>同时修改db_mgt.py中的fetch函数.<br>PyPika_CONNECT.py中的函数"generate_filter_conditions"|

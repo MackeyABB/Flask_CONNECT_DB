@@ -14,7 +14,7 @@ see: Revision_Log.md
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "4.0.1"
+__Version__ = "4.1.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -195,13 +195,14 @@ def index(DBType):
         TechDescription_Searchby = request.form.get("TechDescription")
         Editor_Searchby = request.form.get("Editor")        
         SAP_Number_List = request.form.get("SAP_Number_List")
+        Manufacturer_Searchby = request.form.get("Manufacturer")
             
                   
         # 判断按键
         print("press the button:" + request.form['btn'])
         if request.form['btn'] == 'Search':
             # 条件搜索
-            Search_Info = f"PartNo: {PartNo_Searchby}, SAPNo: {SAPNo_Searchby}, PartValue: {PartValue_Searchby}, MfcPartNum: {MfcPartNum_Searchby}, MaxLine: {MaxLine}, TableName: {tableName}"
+            Search_Info = f"PartNo: {PartNo_Searchby}, SAPNo: {SAPNo_Searchby}, SAP_Des:{Description_Searchby},PartValue: {PartValue_Searchby},Manufacturer: {Manufacturer_Searchby}, MfcPartNum: {MfcPartNum_Searchby}, TechDescription: {TechDescription_Searchby}, Editor: {Editor_Searchby}, MaxLine: {MaxLine}, TableName: {tableName}"
             # 执行搜索
             sql_result, columnNameList = db.fetch(
                 tableName=tableName, 
@@ -212,7 +213,8 @@ def index(DBType):
                 MfcPartNum_Searchby=MfcPartNum_Searchby, 
                 Description_Searchby=Description_Searchby, 
                 TechDescription_Searchby=TechDescription_Searchby, 
-                Editor_Searchby=Editor_Searchby
+                Editor_Searchby=Editor_Searchby,
+                Manufacturer_Searchby=Manufacturer_Searchby
             )
             sql_result_len = len(sql_result)
             # 显示结果
@@ -231,6 +233,7 @@ def index(DBType):
                 tableName=tableName,
                 Description=Description_Searchby,
                 TechDescription=TechDescription_Searchby,
+                Manufacturer=Manufacturer_Searchby,
                 Editor=Editor_Searchby,
                 Version=__Version__
                 )
@@ -282,7 +285,8 @@ def index(DBType):
                     MfcPartNum_Searchby='',
                     Description_Searchby='',
                     TechDescription_Searchby='',
-                    Editor_Searchby=''
+                    Editor_Searchby='',
+                    Manufacturer_Searchby=''
                     )
                 if sql_result_each: # 非空结果才添加
                     sql_result.append(sql_result_each[0])
@@ -349,7 +353,8 @@ def get_ordering_info_from_db(db, dbindex, tableName, SAP_Number_List, Multi_BOM
             MfcPartNum_Searchby='',
             Description_Searchby='',
             TechDescription_Searchby='',
-            Editor_Searchby=''
+            Editor_Searchby='',
+            Manufacturer_Searchby=''
         )
         if sql_result_each:
             sql_result.append(sql_result_each[0])
@@ -790,7 +795,8 @@ def get_DBSync_Sql_Result_By_SAP_Number(DB_Select, SAP_Numbers_List):
             MfcPartNum_Searchby='',
             Description_Searchby='',
             TechDescription_Searchby='',
-            Editor_Searchby=''
+            Editor_Searchby='',
+            Manufacturer_Searchby=''
         )
         if sql_result_each:
             sql_CONNECT_result.append(sql_result_each[0])
@@ -816,7 +822,8 @@ def get_DBSync_Sql_Result_By_SAP_Number(DB_Select, SAP_Numbers_List):
             MfcPartNum_Searchby='',
             Description_Searchby='',
             TechDescription_Searchby='',
-            Editor_Searchby=''
+            Editor_Searchby='',
+            Manufacturer_Searchby=''
         )
         if sql_result_each:
             sql_DB_result.append(sql_result_each[0])
