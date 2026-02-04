@@ -22,7 +22,7 @@ Revision History:
             第三个为CNILG服务器上Access数据库的文件连接
             第四个为CNILX服务器上Access数据库的文件连接
         所以第一个使用SAPMaxDB连接,后三个使用AccessDB连接。
-
+2.3.0 - 20260204: 函数"fetch"增加过滤条件“Manufacturer_Searchby”参数输入,以实现按制造商过滤搜索结果。
 '''
 
 
@@ -31,7 +31,7 @@ Revision History:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__version__ = "2.2.0"
+__version__ = "2.3.0"
 
 
 # 导入子模块
@@ -246,7 +246,7 @@ class Database:
         print(table_list)
         return table_list
 
-    def fetch(self, tableName, dbindex, PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby, Description_Searchby, TechDescription_Searchby, Editor_Searchby):
+    def fetch(self, tableName, dbindex, PartNo_Searchby, SAPNo_Searchby, PartValue_Searchby, MfcPartNum_Searchby, Description_Searchby, TechDescription_Searchby, Editor_Searchby, Manufacturer_Searchby):
         final_sql = ''
         # Determine DB_Type
         # 01-CONNECT Local(ODBC)
@@ -293,7 +293,8 @@ class Database:
             MfcPartNum_Searchby=MfcPartNum_Searchby,
             Description_Searchby=Description_Searchby,
             TechDescription_Searchby=TechDescription_Searchby,
-            Editor_Searchby=Editor_Searchby
+            Editor_Searchby=Editor_Searchby,
+            Manufacturer_Searchby=Manufacturer_Searchby
         )
 
         # 生成最终SQL
