@@ -141,6 +141,12 @@ def write_to_excel(filename, sap_table_names, sap_fields, access_fields, pg_fiel
         safe_sheet = sheet.replace('[','').replace(']','')[:31]  # 31 character limit
         ws = wb.create_sheet(title=safe_sheet)
         ws.append(["TABLES_SAPMaxDB", "TABLES_AccessDB", "TABLES_PostgreSQLDB"])
+        # Output the corresponding table names in the second row
+        ws.append([
+            TABLES_SAPMaxDB[idx] if idx < len(TABLES_SAPMaxDB) else "",
+            TABLES_AccessDB[idx] if idx < len(TABLES_AccessDB) else "",
+            TABLES_PostgreSQLDB[idx] if idx < len(TABLES_PostgreSQLDB) else ""
+        ])
         # Get and sort field names
         sap_list = sap_fields.get(TABLES_SAPMaxDB[idx], [])
         access_list = access_fields.get(TABLES_AccessDB[idx], [])
