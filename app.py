@@ -159,10 +159,10 @@ submit之后显示检索内容
 def index(DBType):
     db = get_db()
     # 根据DBType来设置Part Type 列表的内容,DBType为str,对应db_mgt.DBList的index值,从0开始
-    if DBType == '0' or DBType == '3': 
+    if DBType == '0' : 
         #如果将值直接在render_template里赋值,数据第一次会传递不过去,不知原因。
         Part_Type_List=db_mgt.PartTypeList_CONNECT
-    elif DBType == '1':
+    elif DBType == '1' or DBType == '3':
         Part_Type_List=db_mgt.PartTypeList_Access
     else:
         Part_Type_List=db_mgt.PartTypeList_Access

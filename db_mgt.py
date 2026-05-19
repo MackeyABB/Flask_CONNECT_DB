@@ -207,8 +207,10 @@ class Database:
             connStr = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=\\cn-s-lns050b.cn.abb.com\orcad$\DESTODATABASE\Cadence\CIS_DB\CIS_PartLib.mdb;SystemDB=\\cn-s-lns050b.cn.abb.com\orcad$\DESTODATABASE\Cadence\CIS_DB\CIS_PartLib.mdw;Uid=cadence_port;Pwd=Cadence_CIS.3;"
             print(dblist[dbindex])
         # 04-Access DB(File in CNILX)
+        # 使用跟Access一样的方式来处理PostgreSQL数据库连接，ODBC连接字符串里指定PostgreSQL的ODBC驱动和相关参数即可, Tablea和Fields的SQL语句也跟Access一样, 在PyPika_CONNECT里应该也是一样的处理。
         elif dbindex == 3:
-            connStr = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=\\CN-S-APPC007P\01_EleTeam\Cadence\CIS_DB\CIS_PartLib.mdb;SystemDB=\\CN-S-APPC007P\01_EleTeam\Cadence\CIS_DB\CIS_PartLib.mdw;Uid=cadence_port;Pwd=Cadence_CIS.3;"
+            # connStr = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=\\CN-S-APPC007P\01_EleTeam\Cadence\CIS_DB\CIS_PartLib.mdb;SystemDB=\\CN-S-APPC007P\01_EleTeam\Cadence\CIS_DB\CIS_PartLib.mdw;Uid=cadence_port;Pwd=Cadence_CIS.3;"
+            connStr = "DSN=Connect ePDMS ODBC;Uid=odbc_user;Pwd=CONNECT2READ;"
             print(dblist[dbindex])
 
         # 连接数据库
