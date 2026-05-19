@@ -56,6 +56,11 @@
    服务器执行以下指令更新到最新代码：
    git fetch -all # 更新本地对所有远程分支的引用（不会修改本地分支代码，仅更新元数据）  
    git pull --recurse-submodules # 拉取分支并更新子模块  
+7. DB_cmp
+   用于对比DB数据的测试branch
+8. Fast_Test
+   用于快速测试的branch  
+   测试的文件和程序存放在"Test"子目录下
 
    
 # ToDo List:
