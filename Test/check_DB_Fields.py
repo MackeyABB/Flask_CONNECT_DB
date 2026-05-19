@@ -167,7 +167,7 @@ def write_to_excel(filename, sap_table_names, sap_fields, access_fields, pg_fiel
 
 if __name__ == "__main__":
     # 1. Connection strings and parameters
-    conn_str_sap = "DSN=CIS_Local;Uid=LIMBAS2USER;Pwd=LIMBASREAD;"
+    conn_str_sap = "DSN=CONNECT Partslib V2;Uid=LIMBAS2USER;Pwd=LIMBASREAD;"
     conn_str_access = "DSN=CIS_PartLib_P_64;Uid=cadence_port;Pwd=Cadence_CIS.3;"
     conn_str_pg = "DSN=Connect ePDMS ODBC;Uid=odbc_user;Pwd=CONNECT2READ;"  # PostgreSQL ODBC connection info
 
