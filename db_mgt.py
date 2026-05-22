@@ -52,7 +52,8 @@ import pypyodbc
 DBList = ['01-Cadence CIS DB(ODBC, DESTO)', 
           '02-Altium Access DB(ODBC, CNILG)', 
           '03-Access DB(File in CNILG)',
-          '04-Access DB(File in CNILX)']
+          '04-Access DB(File in CNILX)',
+          '05-PostgreSQL DB(ODBC)']
 
 
 # Part Type List for DB: '01-Cadence CIS DB(ODBC, DESTO)'
@@ -207,9 +208,12 @@ class Database:
             connStr = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=\\cn-s-lns050b.cn.abb.com\orcad$\DESTODATABASE\Cadence\CIS_DB\CIS_PartLib.mdb;SystemDB=\\cn-s-lns050b.cn.abb.com\orcad$\DESTODATABASE\Cadence\CIS_DB\CIS_PartLib.mdw;Uid=cadence_port;Pwd=Cadence_CIS.3;"
             print(dblist[dbindex])
         # 04-Access DB(File in CNILX)
-        # 使用跟Access一样的方式来处理PostgreSQL数据库连接，ODBC连接字符串里指定PostgreSQL的ODBC驱动和相关参数即可, Tablea和Fields的SQL语句也跟Access一样, 在PyPika_CONNECT里应该也是一样的处理。
         elif dbindex == 3:
-            # connStr = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=\\CN-S-APPC007P\01_EleTeam\Cadence\CIS_DB\CIS_PartLib.mdb;SystemDB=\\CN-S-APPC007P\01_EleTeam\Cadence\CIS_DB\CIS_PartLib.mdw;Uid=cadence_port;Pwd=Cadence_CIS.3;"
+            connStr = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=\\CN-S-APPC007P\01_EleTeam\Cadence\CIS_DB\CIS_PartLib.mdb;SystemDB=\\CN-S-APPC007P\01_EleTeam\Cadence\CIS_DB\CIS_PartLib.mdw;Uid=cadence_port;Pwd=Cadence_CIS.3;"
+            print(dblist[dbindex])
+        # 05-PostgreSQL DB(ODBC)
+        # 使用跟Access一样的方式来处理PostgreSQL数据库连接，ODBC连接字符串里指定PostgreSQL的ODBC驱动和相关参数即可, Tablea和Fields的SQL语句跟Access有所不同，需要将[]包含改为"包含", 在PyPika_CONNECT里需要做另外的处理。
+        elif dbindex == 4:
             connStr = "DSN=Connect ePDMS ODBC;Uid=odbc_user;Pwd=CONNECT2READ;"
             print(dblist[dbindex])
 
@@ -243,6 +247,11 @@ class Database:
         elif dbindex == 1 or dbindex == 2 or dbindex == 3:
             # Access数据库获取表名的SQL语句
             sql_listTable = "SELECT NAME FROM MSYSOBJECTS WHERE TYPE=1 AND FLAGS=0;"
+        elif dbindex == 4:
+            # PostgreSQL数据库获取表名的SQL语句
+            # sql_listTable = "SELECT table_name FROM information_schema.tables WHERE table_schema='public';"
+            # PostgreSQL数据库获取视图名的SQL语句, 因为PostgreSQL数据库里表和视图都可能有数据, 但目前只需要视图里的数据, 所以先获取视图列表。
+            sql_listTable = "SELECT viewname FROM pg_views WHERE schemaname = 'public';"
         self.cursor.execute(sql_listTable)
         table_list = self.cursor.fetchall()
         print(table_list)
@@ -259,6 +268,9 @@ class Database:
         # AccessDB数据库获取表名的SQL语句
         elif dbindex == 1 or dbindex == 2 or dbindex == 3: 
             DB_Type = "AccessDB"
+        # 05-PostgreSQL DB(ODBC)
+        elif dbindex == 4:
+            DB_Type = "PostgreSQL"
         # print("Database Type:", DB_Type)
 
         # 仅需要单独判断是搜索某个表还是所有表
@@ -270,6 +282,10 @@ class Database:
                 # AccessDB
                 TABLES.append(f"[{tableName}]")
                 FIELDS = PyPika_CONNECT.FIELDS_AccessDB
+            elif DB_Type == "PostgreSQL":
+                # PostgreSQL
+                TABLES.append(f'"{tableName}"')
+                FIELDS = PyPika_CONNECT.FIELDS_PostgreSQL
             else:
                 # SAPMaxDB
                 TABLES.append(f"{tableName}")
@@ -281,6 +297,10 @@ class Database:
                 # AccessDB
                 TABLES = PyPika_CONNECT.TABLES_AccessDB
                 FIELDS = PyPika_CONNECT.FIELDS_AccessDB
+            elif DB_Type == "PostgreSQL":
+                # PostgreSQL
+                TABLES = PyPika_CONNECT.TABLES_PostgreSQL
+                FIELDS = PyPika_CONNECT.FIELDS_PostgreSQL
             else:
                 # SAPMaxDB
                 TABLES = PyPika_CONNECT.TABLES_SAPMaxDB
