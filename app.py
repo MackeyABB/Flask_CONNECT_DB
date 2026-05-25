@@ -14,7 +14,7 @@ see: Revision_Log.md
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "4.1.0"
+__Version__ = "4.2.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -159,10 +159,12 @@ submit之后显示检索内容
 def index(DBType):
     db = get_db()
     # 根据DBType来设置Part Type 列表的内容,DBType为str,对应db_mgt.DBList的index值,从0开始
-    if DBType == '0' or DBType == '3': 
+    if DBType == '0' : 
         #如果将值直接在render_template里赋值,数据第一次会传递不过去,不知原因。
         Part_Type_List=db_mgt.PartTypeList_CONNECT
-    elif DBType == '1':
+    elif DBType == '1' or DBType == '2' or DBType == '3':
+        Part_Type_List=db_mgt.PartTypeList_Access
+    elif DBType == '4': # PostgreSQL数据库的Part Type列表, 目前先用Access的列表, 后续如果需要可以单独设置一个PostgreSQL的Part Type列表
         Part_Type_List=db_mgt.PartTypeList_Access
     else:
         Part_Type_List=db_mgt.PartTypeList_Access

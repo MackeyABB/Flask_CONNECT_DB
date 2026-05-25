@@ -23,6 +23,8 @@ Revision History:
             第四个为CNILX服务器上Access数据库的文件连接
         所以第一个使用SAPMaxDB连接,后三个使用AccessDB连接。
 2.3.0 - 20260204: 函数"fetch"增加过滤条件“Manufacturer_Searchby”参数输入,以实现按制造商过滤搜索结果。
+2.4.0 - 20260205: 在fetch函数中增加了对PostgreSQL数据库的支持, 通过ODBC连接PostgreSQL数据库, 并且在生成SQL语句时区分不同数据库的SQL语法差异, 以实现对PostgreSQL数据库的正确查询。
+         目前PostgreSQL数据库里只创建了视图, 没有表, 所以在获取表名时是获取视图名, 在生成SQL语句时也只针对视图进行查询, 
 '''
 
 
@@ -31,7 +33,7 @@ Revision History:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__version__ = "2.3.0"
+__version__ = "2.4.0"
 
 
 # 导入子模块
@@ -52,7 +54,8 @@ import pypyodbc
 DBList = ['01-Cadence CIS DB(ODBC, DESTO)', 
           '02-Altium Access DB(ODBC, CNILG)', 
           '03-Access DB(File in CNILG)',
-          '04-Access DB(File in CNILX)']
+          '04-Access DB(File in CNILX)',
+          '05-PostgreSQL DB(ODBC)']
 
 
 # Part Type List for DB: '01-Cadence CIS DB(ODBC, DESTO)'
@@ -210,6 +213,11 @@ class Database:
         elif dbindex == 3:
             connStr = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=\\CN-S-APPC007P\01_EleTeam\Cadence\CIS_DB\CIS_PartLib.mdb;SystemDB=\\CN-S-APPC007P\01_EleTeam\Cadence\CIS_DB\CIS_PartLib.mdw;Uid=cadence_port;Pwd=Cadence_CIS.3;"
             print(dblist[dbindex])
+        # 05-PostgreSQL DB(ODBC)
+        # 使用跟Access一样的方式来处理PostgreSQL数据库连接，ODBC连接字符串里指定PostgreSQL的ODBC驱动和相关参数即可, Tablea和Fields的SQL语句跟Access有所不同，需要将[]包含改为"包含", 在PyPika_CONNECT里需要做另外的处理。
+        elif dbindex == 4:
+            connStr = "DSN=Connect ePDMS ODBC;Uid=odbc_user;Pwd=CONNECT2READ;"
+            print(dblist[dbindex])
 
         # 连接数据库
         try:
@@ -241,6 +249,11 @@ class Database:
         elif dbindex == 1 or dbindex == 2 or dbindex == 3:
             # Access数据库获取表名的SQL语句
             sql_listTable = "SELECT NAME FROM MSYSOBJECTS WHERE TYPE=1 AND FLAGS=0;"
+        elif dbindex == 4:
+            # PostgreSQL数据库获取表名的SQL语句
+            # sql_listTable = "SELECT table_name FROM information_schema.tables WHERE table_schema='public';"
+            # PostgreSQL数据库获取视图名的SQL语句, 因为PostgreSQL数据库里表和视图都可能有数据, 但目前只需要视图里的数据, 所以先获取视图列表。
+            sql_listTable = "SELECT viewname FROM pg_views WHERE schemaname = 'public';"
         self.cursor.execute(sql_listTable)
         table_list = self.cursor.fetchall()
         print(table_list)
@@ -257,6 +270,9 @@ class Database:
         # AccessDB数据库获取表名的SQL语句
         elif dbindex == 1 or dbindex == 2 or dbindex == 3: 
             DB_Type = "AccessDB"
+        # 05-PostgreSQL DB(ODBC)
+        elif dbindex == 4:
+            DB_Type = "PostgreSQL"
         # print("Database Type:", DB_Type)
 
         # 仅需要单独判断是搜索某个表还是所有表
@@ -268,6 +284,10 @@ class Database:
                 # AccessDB
                 TABLES.append(f"[{tableName}]")
                 FIELDS = PyPika_CONNECT.FIELDS_AccessDB
+            elif DB_Type == "PostgreSQL":
+                # PostgreSQL
+                TABLES.append(f'"{tableName}"')
+                FIELDS = PyPika_CONNECT.FIELDS_PostgreSQL
             else:
                 # SAPMaxDB
                 TABLES.append(f"{tableName}")
@@ -279,6 +299,10 @@ class Database:
                 # AccessDB
                 TABLES = PyPika_CONNECT.TABLES_AccessDB
                 FIELDS = PyPika_CONNECT.FIELDS_AccessDB
+            elif DB_Type == "PostgreSQL":
+                # PostgreSQL
+                TABLES = PyPika_CONNECT.TABLES_PostgreSQL
+                FIELDS = PyPika_CONNECT.FIELDS_PostgreSQL
             else:
                 # SAPMaxDB
                 TABLES = PyPika_CONNECT.TABLES_SAPMaxDB
@@ -303,9 +327,10 @@ class Database:
             fields=FIELDS,
             filter_conditions=FILTER_CONDITIONS,
             order_by_field="PartNumber",
-            order="ASC"
+            order="ASC",
+            db_type=DB_Type
         )
-        # print("Generated SQL:\n", final_sql)
+        print("Generated SQL:\n", final_sql)
         self.cursor.execute(final_sql)
         columnNameList = [column[0] for column in self.cursor.description]
         sql_result = self.cursor.fetchall()
