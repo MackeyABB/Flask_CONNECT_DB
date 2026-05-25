@@ -42,3 +42,4 @@
 | 4.0.2  | 2026-01-25 | 主跳转页面第三个选项序号从2改回3|
 | 4.1.0  | 2026-02-04 | 增加过滤条件“Manufacturer_Searchby”参数输入,以实现按制造商过滤搜索结果。<br>同时修改db_mgt.py中的fetch函数.<br>PyPika_CONNECT.py中的函数"generate_filter_conditions"|  
 | 4.2.0  | 2026-05-25 | 1.CONNECT Viewer website 增加PostgreSQL支持;<br> 2.修复"DBType == '3'"是AccessDB时的数据库类型错误。|  
+| 4.3.0  | 2026-05-25 | 1.AVL handle web-page 增加PostgreSQL支持，但未做完整测试，快速测试可以使用;|  

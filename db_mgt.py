@@ -330,7 +330,7 @@ class Database:
             order="ASC",
             db_type=DB_Type
         )
-        print("Generated SQL:\n", final_sql)
+        # print("Generated SQL:\n", final_sql)
         self.cursor.execute(final_sql)
         columnNameList = [column[0] for column in self.cursor.description]
         sql_result = self.cursor.fetchall()

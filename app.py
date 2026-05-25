@@ -14,7 +14,7 @@ see: Revision_Log.md
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "4.2.0"
+__Version__ = "4.3.0"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -477,7 +477,7 @@ def AVLHandle():
             # Step3: 通过SQL获取ordering information
             debug_print("Starting to get ordering info from DB...")
             tableName = '---All----' #检索所有表
-            dbindex = int(DB_Select)    #0: CONNECT DB, 1: Access DB
+            dbindex = int(DB_Select)    #0: CONNECT DB, 1: Access DB， 4: PostgreSQL DB
             # 打开DB
             bIsDBOpen = db.openDB(dbindex, db_mgt.DBList, app)
             if bIsDBOpen == True:
@@ -617,7 +617,7 @@ def AVLHandle():
                 # Step A2: 获取ordering information
                 debug_print("Starting to get ordering info from DB...")
                 tableName = '---All----' #检索所有表
-                dbindex = int(DB_Select)    #0: CONNECT DB, 1: Access DB
+                dbindex = int(DB_Select)    #0: CONNECT DB, 1: Access DB, 4: PostgreSQL DB
                 # 打开DB
                 bIsDBOpen = db.openDB(dbindex, db_mgt.DBList, app)
                 if bIsDBOpen == True:
@@ -670,7 +670,7 @@ def AVLHandle():
                 # Step3: 通过SQL获取ordering information
                 debug_print("Starting to get ordering info from DB...")
                 tableName = '---All----' #检索所有表
-                dbindex = int(DB_Select)    #0: CONNECT DB, 1: Access DB
+                dbindex = int(DB_Select)    #0: CONNECT DB, 1: Access DB, 4: PostgreSQL DB
                 # 打开DB
                 bIsDBOpen = db.openDB(dbindex, db_mgt.DBList, app)
                 if bIsDBOpen == True:
