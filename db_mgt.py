@@ -23,6 +23,8 @@ Revision History:
             第四个为CNILX服务器上Access数据库的文件连接
         所以第一个使用SAPMaxDB连接,后三个使用AccessDB连接。
 2.3.0 - 20260204: 函数"fetch"增加过滤条件“Manufacturer_Searchby”参数输入,以实现按制造商过滤搜索结果。
+2.4.0 - 20260205: 在fetch函数中增加了对PostgreSQL数据库的支持, 通过ODBC连接PostgreSQL数据库, 并且在生成SQL语句时区分不同数据库的SQL语法差异, 以实现对PostgreSQL数据库的正确查询。
+         目前PostgreSQL数据库里只创建了视图, 没有表, 所以在获取表名时是获取视图名, 在生成SQL语句时也只针对视图进行查询, 
 '''
 
 
@@ -31,7 +33,7 @@ Revision History:
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__version__ = "2.3.0"
+__version__ = "2.4.0"
 
 
 # 导入子模块
@@ -325,9 +327,10 @@ class Database:
             fields=FIELDS,
             filter_conditions=FILTER_CONDITIONS,
             order_by_field="PartNumber",
-            order="ASC"
+            order="ASC",
+            db_type=DB_Type
         )
-        # print("Generated SQL:\n", final_sql)
+        print("Generated SQL:\n", final_sql)
         self.cursor.execute(final_sql)
         columnNameList = [column[0] for column in self.cursor.description]
         sql_result = self.cursor.fetchall()
