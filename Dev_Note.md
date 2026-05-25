@@ -2,7 +2,7 @@
 此文件用于保存开发过程中发现的bug、任务、idea快速记录与跟进
 
 # Bug:
-1. app.py
+1. app.py - 4.2.0 done
 以下程序中"DBType == '3'"是AccessDB, 不应该跟1放在一起的，这导致选择这个数据库时，
 在Table选择下拉框中导致错误的TableName形式，需要在正式版中进行修改。
 
@@ -13,7 +13,7 @@ def index(DBType):
 
 
 # Task todo:
-1. PostgreDB 使用需要对SQL生成重新编写
+1. PostgreDB 使用需要对SQL生成重新编写 - 4.2.0 done
 TableName，FieldName使用""包含
 FieldName需要严格遵守大小写
 
