@@ -16,7 +16,7 @@ def index(DBType):
 1. PostgreDB 使用需要对SQL生成重新编写 - 4.2.0 done
 TableName，FieldName使用""包含
 FieldName需要严格遵守大小写
-2. 更新"AVL handle Page"以支持PostgreSQL DB
+2. 更新"AVL handle Page"以支持PostgreSQL DB - 4.3.0 done
 当前仅支持"CONNECT DB""Access DB两个选项"，需要增加添加新数据库的支持。
 
 
