@@ -14,7 +14,7 @@ see: Revision_Log.md
 # xx: 大版本，架构性变化
 # yy: 功能性新增
 # zz: Bug修复
-__Version__ = "4.3.0"
+__Version__ = "4.3.1"
 
 import sys
 from flask import Flask, send_file , jsonify , request, redirect
@@ -164,7 +164,7 @@ def index(DBType):
         Part_Type_List=db_mgt.PartTypeList_CONNECT
     elif DBType == '1' or DBType == '2' or DBType == '3':
         Part_Type_List=db_mgt.PartTypeList_Access
-    elif DBType == '4': # PostgreSQL数据库的Part Type列表, 目前先用Access的列表, 后续如果需要可以单独设置一个PostgreSQL的Part Type列表
+    elif DBType == '4' or DBType == '5': # PostgreSQL数据库的Part Type列表, 目前先用Access的列表, 后续如果需要可以单独设置一个PostgreSQL的Part Type列表
         Part_Type_List=db_mgt.PartTypeList_Access
     else:
         Part_Type_List=db_mgt.PartTypeList_Access
