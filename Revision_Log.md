@@ -40,4 +40,7 @@
 | 4.0.0  | 2026-01-25 | 主程序中db实例不再使用全局，使用from flask import g方式在每个需要的地方新建实例，以避免多作用多线程操作下出现的冲突问题。|
 | 4.0.1  | 2026-01-25 | excel_mapping中的dataildrawing的位置号错误更改|
 | 4.0.2  | 2026-01-25 | 主跳转页面第三个选项序号从2改回3|
-| 4.1.0  | 2026-02-04 | 增加过滤条件“Manufacturer_Searchby”参数输入,以实现按制造商过滤搜索结果。<br>同时修改db_mgt.py中的fetch函数.<br>PyPika_CONNECT.py中的函数"generate_filter_conditions"|
+| 4.1.0  | 2026-02-04 | 增加过滤条件“Manufacturer_Searchby”参数输入,以实现按制造商过滤搜索结果。<br>同时修改db_mgt.py中的fetch函数.<br>PyPika_CONNECT.py中的函数"generate_filter_conditions"|  
+| 4.2.0  | 2026-05-25 | 1.CONNECT Viewer website 增加PostgreSQL支持;<br> 2.修复"DBType == '3'"是AccessDB时的数据库类型错误。|  
+| 4.3.0  | 2026-05-25 | 1.AVL handle web-page 增加PostgreSQL支持，但未做完整测试，快速测试可以使用;|  
+| 4.3.1  | 2026-11-04 | 补齐06-PostgreSQL DB(ODBC-Replica)支持，与05-PostgreSQL DB(ODBC-Master)共用功能，仅使用不同DSN连接。<br>1.db_mgt.py升级至2.4.1，修复listTable()和fetch()未处理Replica索引5的问题，支持相同的视图列表、单表及全表查询。<br>2.AVL处理页增加Replica选项，明确区分Master/Replica。<br>3.新增五项回归测试，覆盖DSN及连接参数、视图列表、查询SQL与结果、连接失败处理和AVL选择项，全部通过；实际数据库连接及副本同步状态尚未验证。|
